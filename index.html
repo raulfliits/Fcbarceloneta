@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#c92131">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mariners 16">
+<title>Mariners Fútbol 16 bits · C.F. Barceloneta Sub 12 A</title>
+<meta name="description" content="Videojuego de fútbol 7 en pixel art 16 bits del C.F. Barceloneta Sub 12 A. Partido libre, Liga ACDEA 26/27 y Copa.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#c92131;--red2:#8e1220;--cream:#f7efdc;--ink:#14182a;--ink2:#222a45;--gold:#f2c14e;--green:#2f8f3e;
+  --f:'Press Start 2P',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--ink);color:var(--cream);font-family:var(--f);overflow:hidden;
+  -webkit-user-select:none;user-select:none;touch-action:none}
+img.px,canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+#app{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+#cv{display:block;background:#1b4d27}
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none;display:none}
+#score{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;
+  background:var(--ink);border:3px solid var(--cream);box-shadow:0 0 0 3px var(--ink),4px 4px 0 3px rgba(0,0,0,.4);padding:5px 9px;font-size:12px;white-space:nowrap}
+#score img{width:22px;height:22px}
+#score .sc{color:var(--gold);min-width:56px;text-align:center}
+#score .tm{background:var(--red);color:#fff;padding:3px 5px;margin-left:4px;font-size:10px}
+#ctrlCard{position:absolute;left:8px;top:8px;display:flex;align-items:center;gap:6px;background:rgba(20,24,42,.85);
+  border:2px solid var(--cream);padding:3px 7px 3px 3px;font-size:9px}
+#ctrlCard img{width:34px;height:34px;border:2px solid var(--red)}
+#ctrlCard b{display:block;color:var(--gold);font-size:12px;margin-bottom:3px}
+#pauseBtn{position:absolute;right:8px;top:8px;pointer-events:auto;width:40px;height:40px;font:14px var(--f);background:var(--ink);color:var(--cream);border:3px solid var(--cream)}
+#banner{position:absolute;left:0;right:0;top:34%;text-align:center;display:none;pointer-events:none}
+#banner .big{display:inline-block;font-size:clamp(24px,7vw,56px);color:var(--gold);text-shadow:4px 4px 0 var(--red2),8px 8px 0 #000;letter-spacing:.06em;animation:pop .35s steps(4)}
+#banner .sub{margin-top:14px;font-size:clamp(10px,2.2vw,16px);text-shadow:2px 2px 0 #000;display:flex;align-items:center;justify-content:center;gap:10px}
+#banner .sub img{width:48px;height:48px;border:3px solid var(--cream)}
+@keyframes pop{0%{transform:scale(.3)}100%{transform:scale(1)}}
+/* touch */
+#touch{position:absolute;inset:0;pointer-events:none;display:none}
+#joy{position:absolute;left:0;bottom:0;width:50%;height:60%;pointer-events:auto}
+#joyBase{position:absolute;width:110px;height:110px;border-radius:50%;border:3px solid rgba(255,255,255,.35);background:rgba(0,0,0,.18);display:none;transform:translate(-50%,-50%)}
+#joyKnob{position:absolute;width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.55);left:50%;top:50%;transform:translate(-50%,-50%)}
+.tb{position:absolute;pointer-events:auto;border-radius:50%;border:3px solid rgba(255,255,255,.75);color:#fff;font:9px var(--f);
+  display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;text-shadow:1px 1px 0 #000}
+.tb.on{filter:brightness(1.5);transform:scale(.94)}
+#bA{right:22px;bottom:70px;width:84px;height:84px;background:rgba(201,33,49,.75)}
+#bB{right:116px;bottom:22px;width:70px;height:70px;background:rgba(40,90,200,.7)}
+#bS{right:26px;bottom:164px;width:58px;height:58px;background:rgba(242,193,78,.6);font-size:8px}
+/* screens */
+#screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;touch-action:pan-y;
+  background:linear-gradient(180deg,rgba(20,24,42,.94),rgba(20,24,42,.98));padding:16px 16px 40px}
+#screen.clear{background:rgba(20,24,42,.72)}
+.wrap{max-width:860px;margin:0 auto}
+h1,h2,h3{font-weight:normal;margin:0}
+.title{text-align:center;padding-top:6px}
+.title .logo{width:96px;height:96px}
+.title h1{font-size:clamp(20px,5.4vw,40px);color:#fff;text-shadow:4px 4px 0 var(--red),8px 8px 0 #000;line-height:1.3;margin:14px 0 6px}
+.title h1 span{display:block;font-size:.42em;color:var(--gold);text-shadow:2px 2px 0 #000;letter-spacing:.3em;margin-top:10px}
+.photo{display:block;margin:16px auto;width:min(384px,92%);border:4px solid var(--cream);box-shadow:0 0 0 4px var(--red),8px 8px 0 4px #000}
+.blink{animation:blink 1s steps(2) infinite;color:var(--gold);font-size:12px;margin-top:14px}
+@keyframes blink{50%{opacity:0}}
+.menu{display:grid;gap:12px;max-width:420px;margin:18px auto}
+.btn{font:12px var(--f);color:var(--ink);background:var(--cream);border:4px solid var(--ink);box-shadow:0 0 0 3px var(--cream),5px 5px 0 3px #000;
+  padding:14px 12px;cursor:pointer;text-align:center;line-height:1.5;text-transform:uppercase}
+.btn small{display:block;font-size:8px;color:#6b5b55;margin-top:6px;text-transform:none}
+.btn:hover,.btn:focus{background:var(--gold);outline:none;transform:translate(-2px,-2px)}
+.btn.red{background:var(--red);color:#fff}.btn.red small{color:#ffd9d9}
+.btn.red:hover,.btn.red:focus{background:#e2384a}
+.btn.sm{font-size:9px;padding:9px 10px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:16px 0}
+.hdr{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.hdr h2{font-size:clamp(13px,3.4vw,20px);color:var(--gold);text-shadow:2px 2px 0 #000;line-height:1.4}
+.hdr .back{margin-left:auto}
+.panel{background:var(--ink2);border:3px solid var(--cream);box-shadow:4px 4px 0 #000;padding:12px;margin:12px 0}
+.panel h3{font-size:11px;color:var(--gold);margin-bottom:10px}
+.muted{color:#a8a3b8;font-size:9px;line-height:1.7}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.team{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:9px;line-height:1.5;padding:12px 6px}
+.team img{width:48px;height:48px}
+.team em{font-style:normal;font-size:7px;color:#6b5b55}
+table{border-collapse:collapse;width:100%;font-size:9px}
+th,td{padding:6px 4px;text-align:center;border-bottom:2px solid #333b5c;white-space:nowrap}
+th{color:var(--gold);font-weight:normal}
+td.l,th.l{text-align:left}
+tr.me td{background:rgba(201,33,49,.45);color:#fff}
+td img{width:16px;height:16px;vertical-align:middle;margin-right:6px}
+.scroll{overflow-x:auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.card{background:var(--cream);color:var(--ink);border:3px solid var(--ink);box-shadow:0 0 0 3px var(--cream),4px 4px 0 3px #000;padding:10px;display:flex;gap:10px;cursor:pointer;position:relative;font:10px var(--f);text-align:left}
+.card img{width:56px;height:56px;border:3px solid var(--red);background:#ddd}
+.card .num{font-size:18px;color:var(--red)}
+.card .nm{margin:5px 0;font-size:10px}
+.card .pos{font-size:8px;color:#6b5b55}
+.bars{display:grid;grid-template-columns:auto 1fr;gap:3px 5px;font-size:7px;margin-top:6px;align-items:center}
+.bar{height:5px;background:#d7cbb0}.bar i{display:block;height:100%;background:var(--red)}
+.inj{position:absolute;right:6px;top:6px;background:var(--red);color:#fff;font-size:7px;padding:3px 4px}
+.card.out{opacity:.6;filter:grayscale(.7)}
+/* lineup */
+.pitch{position:relative;width:100%;max-width:520px;aspect-ratio:16/10;margin:0 auto;background:repeating-linear-gradient(90deg,#3fa046 0 12.5%,#47ad4f 12.5% 25%);border:3px solid #fff;box-shadow:4px 4px 0 #000}
+.pitch:before{content:'';position:absolute;left:50%;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.8)}
+.slot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;font:7px var(--f);color:#fff;text-shadow:1px 1px 0 #000;cursor:pointer;background:none;border:none;padding:0}
+.slot img{width:34px;height:34px;border:2px solid #fff;background:#ddd}
+.slot.sel img,.bench .sel{outline:3px solid var(--gold)}
+.bench{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+.bench button{font:8px var(--f);background:var(--cream);color:var(--ink);border:3px solid var(--ink);padding:5px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.bench button img{width:28px;height:28px}
+.bench button.out{opacity:.5;cursor:not-allowed}
+.opt{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0;font-size:10px}
+.opt .btn{padding:8px 10px;font-size:9px}
+.opt .btn.on{background:var(--gold)}
+.faces{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.faces button{padding:0;border:3px solid var(--cream);background:#ddd;cursor:pointer}
+.faces button.on{border-color:var(--gold);outline:3px solid var(--red)}
+.faces img{width:100%;display:block}
+.bracket{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:8px}
+.bracket .col{display:flex;flex-direction:column;justify-content:space-around;gap:8px}
+.tie{background:var(--ink2);border:2px solid #4b5478;padding:5px}
+.tie div{display:flex;justify-content:space-between;align-items:center;gap:4px;padding:3px 0}
+.tie img{width:14px;height:14px}
+.tie .w{color:var(--gold)}
+.tie.me{border-color:var(--red)}
+.res{text-align:center}
+.res .big{font-size:clamp(26px,8vw,52px);color:var(--gold);text-shadow:4px 4px 0 var(--red2);margin:14px 0}
+.res .vs{display:flex;align-items:center;justify-content:center;gap:16px;font-size:10px;line-height:1.5}
+.res .vs img{width:64px;height:64px}
+.list{font-size:9px;line-height:2}
+.keys{font-size:9px;line-height:2.1}
+.keys b{display:inline-block;background:var(--cream);color:var(--ink);padding:1px 5px;margin:0 2px}
+#rotate{display:none}
+@media (max-width:640px){#ctrlCard{top:60px}#score{font-size:10px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><canvas id="cv" width="320" height="180"></canvas></div>
+  <div id="hud">
+    <div id="ctrlCard"><img class="px" id="ccImg" alt=""><div><b id="ccNum"></b><span id="ccName"></span></div></div>
+    <div id="score"><img class="px" id="sHome" alt=""><span id="sHomeN"></span><span class="sc" id="sSc">0 - 0</span><span id="sAwayN"></span><img class="px" id="sAway" alt=""><span class="tm" id="sTm">0'</span></div>
+    <button id="pauseBtn" aria-label="Pausa">II</button>
+    <div id="banner"><div class="big" id="bnBig"></div><div class="sub" id="bnSub"></div></div>
+  </div>
+  <div id="touch">
+    <div id="joy"><div id="joyBase"><div id="joyKnob"></div></div></div>
+    <div class="tb" id="bA">CHUTAR</div>
+    <div class="tb" id="bB">PASE</div>
+    <div class="tb" id="bS">SPRINT</div>
+  </div>
+  <div id="screen"></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>

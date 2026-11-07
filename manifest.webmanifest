@@ -1,0 +1,15 @@
+{
+  "name": "Mariners Fútbol 16 bits · C.F. Barceloneta Sub 12 A",
+  "short_name": "Mariners 16",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#14182a",
+  "theme_color": "#c92131",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
