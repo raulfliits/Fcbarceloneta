@@ -1077,16 +1077,16 @@ function finishMatch() {
   if (ctx.type === 'copa' && res.gf === res.ga) { penalties(res, ctx); return; }
   ctx.onEnd(res);
 }
-function resultScreen(res, title, onCont, extra = '') {
+function resultScreen(res, title, onCont, extra = '', penMode = false) {
   const won = res.gf > res.ga, draw = res.gf === res.ga, opp = TEAMS[res.opp];
   const sc = {}; res.scorers.forEach(n => sc[n] = (sc[n] || 0) + 1);
-  const scHTML = Object.keys(sc).length ? Object.entries(sc).map(([n, c]) => { const pl = PLAYERS.find(p => p.name === n); return `<div>⚽ ${pl ? '#' + pl.n + ' ' : ''}${esc(n)}${c > 1 ? ' x' + c : ''}</div>`; }).join('') : '<div class="muted">Sin goles</div>';
+  const scHTML = Object.keys(sc).length ? Object.entries(sc).map(([n, c]) => { const pl = PLAYERS.find(p => p.name === n); return `<div>⚽ ${pl ? '#' + pl.n + ' ' : ''}${esc(n)}${c > 1 ? ' x' + c : ''}</div>`; }).join('') : `<div class="muted">${penMode ? 'Ninguno' : 'Sin goles'}</div>`;
   const pens = res.pens ? `<div style="font-size:11px;margin-top:-6px">Penaltis: ${res.pens[0]} - ${res.pens[1]}</div>` : '';
   screen(`<div class="wrap res"><div class="hdr" style="justify-content:center"><h2>${esc(title)}</h2></div>
     <div class="vs"><div><img class="px" src="${TEAMS.BAR.crestURL}" alt=""><br>BARCELONETA</div><div class="big">${res.gf}-${res.ga}</div><div><img class="px" src="${opp.crestURL}" alt=""><br>${esc(opp.name)}</div></div>
     ${pens}
     <h2 style="font-size:14px;margin:16px 0;color:${won || (res.pens && res.pens[0] > res.pens[1]) ? 'var(--gold)' : draw ? '#fff' : '#ff8a8a'}">${won ? '¡VICTORIA MARINER!' : draw ? (res.pens ? (res.pens[0] > res.pens[1] ? '¡PASAMOS EN PENALTIS!' : 'ELIMINADOS EN PENALTIS') : 'EMPATE') : 'DERROTA... ¡A SEGUIR!'}</h2>
-    <div class="panel" style="max-width:420px;margin:0 auto;text-align:left"><h3>Goles del Barceloneta</h3><div class="list">${scHTML}</div></div>
+    <div class="panel" style="max-width:420px;margin:0 auto;text-align:left"><h3>${penMode ? 'Penaltis marcados' : 'Goles del Barceloneta'}</h3><div class="list">${scHTML}</div></div>
     ${extra}
     <div class="row"><button class="btn red" data-a="cont">Continuar</button></div></div>`, {cont: onCont});
   if (won || (res.pens && res.pens[0] > res.pens[1])) SFX.goal(); startMusic();
@@ -1098,7 +1098,8 @@ function penalties(res, ctx) {
   G.mode = 'pens'; hideScreen(); showHUD(false); $('#touch').style.display = isTouch && !CONSOLE ? 'block' : 'none';
   const opp = TEAMS[res.opp];
   PEN = {res, ctx, opp, kicks: [[], []], turn: 0, phase: 'aim', t: 0, cursor: 0, gkZone: 0, ball: null, msg: '', msgT: 0,
-    shooters: G.lineup.slice(1).concat(G.lineup.slice(1)).map(byNum), gk: byNum(G.lineup[0])};
+    shooters: G.lineup.slice(1).map(byNum).sort((a, b) => b.sho - a.sho), gk: byNum(G.lineup[0])};
+  res.penScorers = [];
   fit();
 }
 function penZone(x) { return x < 130 ? -1 : x > 190 ? 1 : 0; }
@@ -1108,12 +1109,17 @@ function penStep(dt) {
   if (P.phase === 'aim') {
     if (P.turn === 0) {
       P.cursor = 160 + Math.sin(P.t * 2.6) * 102;
-      if (inp.shootP) { const x = P.cursor; P.target = x; P.gkZone = [-1, 0, 1][Math.floor(Math.random() * 3)]; P.phase = 'fly'; P.t = 0; SFX.shot(); }
+      if (inp.shootP || inp.passP) {
+        const x = P.cursor; P.target = x;
+        const guess = [0.24, 0.36, 0.5][settings.diff] ?? 0.36, z = penZone(x); // el portero rival adivina más en difícil
+        P.gkZone = Math.random() < guess ? z : [-1, 0, 1].filter(k => k !== z)[Math.floor(Math.random() * 2)];
+        P.phase = 'fly'; P.t = 0; SFX.shot();
+      }
     } else {
       P.choice = inp.x < -0.3 ? -1 : inp.x > 0.3 ? 1 : 0;
-      if (inp.shootP || P.t > 2.2) {
+      if (inp.shootP || inp.passP || P.t > 2.2) {
         const z = [-1, 0, 1][Math.floor(Math.random() * 3)];
-        P.target = 160 + z * 62 + rand(-14, 14); if (Math.random() < 0.08) P.target = z < 0 ? 64 : 256;
+        P.target = 160 + z * 62 + rand(-14, 14); if (Math.random() < ([0.16, 0.08, 0.04][settings.diff] ?? 0.08)) P.target = z < 0 ? 64 : 256;
         P.gkZone = P.choice; P.phase = 'fly'; P.t = 0; SFX.shot();
       }
     }
@@ -1122,8 +1128,9 @@ function penStep(dt) {
       const x = P.target, wide = x < 72 || x > 248;
       let scored;
       if (wide) scored = false;
-      else if (penZone(x) === P.gkZone) scored = Math.random() > (P.turn === 0 ? 0.72 : 0.62 + (P.gk.gk || 5) * 0.02);
+      else if (penZone(x) === P.gkZone) scored = Math.random() > (P.turn === 0 ? 0.72 : ([0.82, 0.7, 0.58][settings.diff] ?? 0.7) + ((P.gk.gk || 5) - 5) * 0.02);
       else scored = true;
+      if (scored && P.turn === 0) P.res.penScorers.push(P.shooters[P.kicks[0].length % P.shooters.length].name);
       P.kicks[P.turn].push(scored); P.phase = 'result'; P.t = 0;
       P.msg = scored ? '¡GOL!' : wide ? '¡FUERA!' : '¡PARADA!'; P.msgT = 1.3;
       scored ? (P.turn === 0 ? SFX.goal() : SFX.tackle()) : SFX.save();
@@ -1294,11 +1301,12 @@ function mainMenu() {
       <button class="btn red" data-a="libre">Partido libre<small>Elige rival y juega un amistoso</small></button>
       <button class="btn" data-a="liga">Liga ACDEA 26/27<small>${lg ? `Jornada ${Math.min(lg.j + 1, 18)} de 18` : '10 equipos · 18 jornadas'}</small></button>
       <button class="btn" data-a="copa">Copa Mariners<small>${cp ? (cp.champ ? 'Terminada' : cp.out ? 'Eliminados' : ['Cuartos de final', 'Semifinales', 'Final'][cp.round]) : 'Eliminatorias: cuartos, semis y final'}</small></button>
+      <button class="btn" data-a="penaltis">Penaltis<small>Tanda directa contra el rival que elijas</small></button>
       <button class="btn" data-a="plantilla">Plantilla<small>Convocados, dorsales y fotos</small></button>
       <button class="btn" data-a="opciones">Opciones<small>${settings.dur} min · ${DIFF[settings.diff].name} · Sonido ${settings.sound ? 'sí' : 'no'}</small></button>
       <button class="btn" data-a="ayuda">Cómo se juega</button>
     </div></div>`, {
-    libre: pickRival, liga: ligaScreen, copa: copaScreen, plantilla: plantillaScreen, opciones: opcionesScreen,
+    libre: pickRival, liga: ligaScreen, copa: copaScreen, penaltis: penRival, plantilla: plantillaScreen, opciones: opcionesScreen,
     ayuda: () => screen(helpHTML(), {back: mainMenu})});
 }
 function helpHTML(inMatch) {
@@ -1310,7 +1318,7 @@ function helpHTML(inMatch) {
     <b>SHIFT</b> sprint · <b>C</b> cambiar jugador · <b>ESC</b> / <b>P</b> pausa</div></div>
   <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Joystick: mover.<br>A: CHUTAR / SEGADA · B: PASAR / DEFENDER · X: CAMBIO de jugador · Y: SPRINT · START: pausa · SELECT: sonido.<br>En los menús, A, B, X, Y y START aceptan; el joystick mueve la selección.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
   <div class="panel"><h3>Mando</h3><div class="keys">Stick / cruceta mover · A chutar/entrada · X o B pase/cambio · Y cambiar · RB/RT sprint · START pausa</div></div>
-  <div class="panel"><h3>Reglas</h3><div class="muted">Fútbol 7: portero + 6. Antes de cada partido puedes elegir la formación (1-3-2-1, 1-3-1-2, 1-2-3-1, 1-2-2-2 o 1-3-3) y la dificultad (fácil, medio o difícil). Dos partes de 25 minutos (el tiempo de juego real se cambia en Opciones). En la Copa, si hay empate se decide en una tanda de penaltis.</div></div></div>`;
+  <div class="panel"><h3>Reglas</h3><div class="muted">Modo Penaltis: tanda de 5 contra el rival que elijas (y muerte súbita si hay empate). Fútbol 7: portero + 6. Antes de cada partido puedes elegir la formación (1-3-2-1, 1-3-1-2, 1-2-3-1, 1-2-2-2 o 1-3-3) y la dificultad (fácil, medio o difícil). Dos partes de 25 minutos (el tiempo de juego real se cambia en Opciones). En la Copa, si hay empate se decide en una tanda de penaltis.</div></div></div>`;
 }
 function opcionesScreen() {
   const o = (k, v, label) => `<button class="btn ${settings[k] === v ? 'on' : ''}" data-a="set" data-v="${k}:${v}">${label}</button>`;
@@ -1356,6 +1364,28 @@ function teamCard(id) { const t = TEAMS[id]; return `<button class="btn team" da
 function pickRival() {
   screen(`<div class="wrap">${header('PARTIDO LIBRE · ELIGE RIVAL')}<div class="teams">${OPP_IDS.map(teamCard).join('')}</div></div>`,
     {back: mainMenu, pick: id => lineupScreen(id, {type: 'libre', label: 'AMISTOSO', onEnd: r => resultScreen(r, 'PARTIDO LIBRE', mainMenu)}, pickRival)});
+}
+// ----- modo penaltis -----
+function penRival() {
+  screen(`<div class="wrap">${header('PENALTIS · ELIGE RIVAL')}<div class="teams">${OPP_IDS.map(teamCard).join('')}</div></div>`,
+    {back: mainMenu, pick: id => penIntro(id)});
+}
+function penIntro(oppId) {
+  const opp = TEAMS[oppId], gk = byNum(G.lineup[0]), sh = G.lineup.slice(1).map(byNum).sort((a, b) => b.sho - a.sho);
+  const fig = p => `<figure><img class="px" src="${faceURL(p)}" alt=""><b>${p.n}</b>${esc(p.name)}</figure>`;
+  stopMusic(); [392, 523, 659, 784].forEach((f, i) => tone(f, 0.12, 'square', 0.06, null, i * 0.09));
+  screen(`<div class="wrap">${header('TANDA DE PENALTIS')}
+    <div class="vs" style="margin-top:2vh"><div class="vsL"><img class="px cr" src="${TEAMS.BAR.crestURL}" alt=""><br>C.F. BARCELONETA</div><div class="x">VS</div><div class="vsR"><img class="px cr" src="${opp.crestURL}" alt=""><br>${esc(opp.name)}</div></div>
+    <div class="panel"><h3>Portero</h3><div class="faceRow">${fig(gk)}</div>
+      <h3 style="margin-top:10px">Lanzadores (en este orden)</h3><div class="faceRow">${sh.map(fig).join('')}</div>
+      <p class="muted" style="text-align:center">Se cambian en la alineación de Partido libre. Dificultad: ${DIFF[settings.diff].name}</p></div>
+    <div class="muted" style="text-align:center;line-height:2">Al chutar: pulsa cuando la mirilla esté donde quieres tirar.<br>Al parar: elige lado con el joystick o las flechas y pulsa.</div>
+    <div class="row"><button class="btn red" data-a="go" style="font-size:14px">¡Empezar!</button></div></div>`, {
+    back: penRival,
+    go: () => penalties({gf: 0, ga: 0, scorers: [], oppScorers: [], opp: oppId}, {type: 'penaltis', onEnd: r => {
+      const res = {gf: r.pens[0], ga: r.pens[1], scorers: r.penScorers, oppScorers: [], opp: oppId};
+      resultScreen(res, 'TANDA DE PENALTIS', mainMenu, '', true);
+    }})});
 }
 // ----- alineación -----
 G.form = (() => { const f = store.get('formacion', '1-2-2-2'); return FORMS[f] ? f : '1-2-2-2'; })();
