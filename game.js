@@ -454,28 +454,37 @@ function buildField() {
 }
 
 // ---------- PARTIDO ----------
-const FORM = [
-  {role: 'POR', u: 0.03, v: 0.5}, {role: 'DEF', u: 0.2, v: 0.3}, {role: 'DEF', u: 0.2, v: 0.7},
-  {role: 'MED', u: 0.42, v: 0.25}, {role: 'MED', u: 0.42, v: 0.75}, {role: 'DEL', u: 0.64, v: 0.4}, {role: 'DEL', u: 0.68, v: 0.62},
-];
-const DIFF = [{name: 'FÁCIL', mul: 0.82}, {name: 'NORMAL', mul: 1}, {name: 'DIFÍCIL', mul: 1.16}];
+// Formaciones de fútbol 7 (portero + 6). u = profundidad (0 propia portería, 1 portería rival), v = banda (0 arriba, 1 abajo)
+const S_ = (role, u, v) => ({role, u, v});
+const POR_ = S_('POR', 0.03, 0.5);
+const FORMS = {
+  '1-3-2-1': [POR_, S_('DEF', 0.19, 0.22), S_('DEF', 0.16, 0.5), S_('DEF', 0.19, 0.78), S_('MED', 0.42, 0.32), S_('MED', 0.42, 0.68), S_('DEL', 0.68, 0.5)],
+  '1-3-1-2': [POR_, S_('DEF', 0.19, 0.22), S_('DEF', 0.16, 0.5), S_('DEF', 0.19, 0.78), S_('MED', 0.42, 0.5), S_('DEL', 0.65, 0.34), S_('DEL', 0.65, 0.66)],
+  '1-2-3-1': [POR_, S_('DEF', 0.2, 0.3), S_('DEF', 0.2, 0.7), S_('MED', 0.43, 0.18), S_('MED', 0.4, 0.5), S_('MED', 0.43, 0.82), S_('DEL', 0.68, 0.5)],
+  '1-2-2-2': [POR_, S_('DEF', 0.2, 0.3), S_('DEF', 0.2, 0.7), S_('MED', 0.42, 0.25), S_('MED', 0.42, 0.75), S_('DEL', 0.64, 0.4), S_('DEL', 0.68, 0.62)],
+  '1-3-3':   [POR_, S_('DEF', 0.19, 0.22), S_('DEF', 0.16, 0.5), S_('DEF', 0.19, 0.78), S_('DEL', 0.6, 0.2), S_('DEL', 0.64, 0.5), S_('DEL', 0.6, 0.8)],
+};
+const FORM_IDS = Object.keys(FORMS);
+// Dificultad: mul = fuerza y reflejos del rival; ours = reflejos de tus compañeros controlados por la máquina
+const DIFF = [{name: 'FÁCIL', mul: 0.8, ours: 1.08}, {name: 'MEDIO', mul: 1, ours: 1}, {name: 'DIFÍCIL', mul: 1.22, ours: 0.94}];
 let M = null;
 const G = {mode: 'menu', paused: false, ctx: null};
 const W = (team, u, v) => ({x: team === 0 ? F.x0 + u * FL : F.x1 - u * FL, y: F.y0 + v * FHt});
 
 function newMatch(oppId, lineup, ctx) {
-  const opp = TEAMS[oppId], diff = DIFF[settings.diff].mul;
+  const opp = TEAMS[oppId], D = DIFF[settings.diff] || DIFF[1], diff = D.mul;
+  const myForm = FORMS[G.form] || FORMS['1-2-2-2'], oppFormId = ctx.oppForm || FORM_IDS[Math.floor(Math.random() * FORM_IDS.length)], oppForm = FORMS[oppFormId];
   M = {opp, ctx, t: 0, len: settings.dur * 60, half: 1, score: [0, 0], scorers: [], oppScorers: [], players: [],
        ball: {x: CX, y: CY, z: 0, vx: 0, vy: 0, vz: 0, owner: null, last: null, noTake: null, noTakeT: 0, shot: false, gkCheck: false},
-       state: 'kickoff', stateT: 0, kickTeam: 0, ctrl: null, cam: {x: CX - VW / 2, y: CY - VH / 2}, react: [1, (0.55 + opp.str / 180) * diff], shake: 0, msgT: 0};
+       state: 'kickoff', stateT: 0, kickTeam: 0, ctrl: null, cam: {x: CX - VW / 2, y: CY - VH / 2}, react: [D.ours, (0.55 + opp.str / 180) * diff], oppFormId, shake: 0, msgT: 0};
   lineup.forEach((num, i) => {
-    const d = byNum(num), slot = FORM[i], look = lookOf(d);
+    const d = byNum(num), slot = myForm[i], look = lookOf(d);
     M.players.push(mkPlayer(0, slot, {pac: d.pac, sho: d.sho, pas: d.pas, def: d.def, gk: d.gk || 3}, d, look, TEAMS.BAR.kit));
   });
   const base = opp.str / 10 * diff;
   const skins = ['#f0c8a0', '#e3b28a', '#c58b60', '#a86f48', '#f3cfa8', '#8a5a3a'], hairs = ['#2a211c', '#1d1a1a', '#6b4528', '#d8b060', '#3a2a20', '#9a7044'];
   const nums = [1, 2, 4, 5, 8, 9, 10];
-  FORM.forEach((slot, i) => {
+  oppForm.forEach((slot, i) => {
     const r = () => clamp(base + rand(-1.2, 1.2), 2, 10);
     const st = {pac: r(), sho: r() + (slot.role === 'DEL' ? 1 : 0), pas: r(), def: r() + (slot.role === 'DEF' ? 1 : 0), gk: slot.role === 'POR' ? clamp(base, 3, 9.5) : 3};
     M.players.push(mkPlayer(1, slot, st, {n: nums[i], name: '#' + nums[i]}, {skin: skins[i % 6], hair: hairs[(i * 5) % 6]}, opp.kit));
@@ -496,7 +505,7 @@ function kickoff(team) {
     const u = p.role === 'POR' ? 0.03 : Math.min(p.hu * 0.62, 0.44), pos = W(p.team, u, p.hv);
     Object.assign(p, {x: pos.x, y: pos.y, vx: 0, vy: 0, fx: p.team ? -1 : 1, fy: 0, slide: 0, dive: 0, stun: 0, charge: 0, hold: 0});
   }
-  const kick = M.players.filter(p => p.team === team && p.role === 'DEL');
+  const kick = M.players.filter(p => p.team === team && p.role !== 'POR').sort((a, c) => c.hu - a.hu || Math.abs(a.hv - 0.5) - Math.abs(c.hv - 0.5));
   const d = team ? 1 : -1;
   kick[0].x = CX + d * 4; kick[0].y = CY; kick[1].x = CX + d * 10; kick[1].y = CY - 18;
   b.owner = kick[0]; kick[0].passAfter = 0.6;
@@ -1272,7 +1281,7 @@ function vsScreen(oppId, ctx) {
   let go = false; const start = () => { if (go) return; go = true; clearTimeout(tm); newMatch(oppId, G.lineup.slice(), ctx); };
   screen(`<div class="wrap" data-a="go" style="min-height:90%">
     <div class="p1"><span>${esc(ctx.label || 'PARTIDO')}</span><span>${settings.dur} MIN · ${DIFF[settings.diff].name}</span></div>
-    <div class="vs"><div class="vsL"><img class="px cr" src="${TEAMS.BAR.crestURL}" alt=""><br>C.F. BARCELONETA</div><div class="x">VS</div><div class="vsR"><img class="px cr" src="${opp.crestURL}" alt=""><br>${esc(opp.name)}</div></div>
+    <div class="vs"><div class="vsL"><img class="px cr" src="${TEAMS.BAR.crestURL}" alt=""><br>C.F. BARCELONETA<br><span style="color:var(--gold)">${G.form}</span></div><div class="x">VS</div><div class="vsR"><img class="px cr" src="${opp.crestURL}" alt=""><br>${esc(opp.name)}<br><span style="color:var(--gold)">${ctx.oppForm || ''}</span></div></div>
     <div class="faceRow" style="margin-top:26px">${xi.map(p => `<figure><img class="px" src="${faceURL(p)}" alt=""><b>${p.n}</b>${esc(p.name)}</figure>`).join('')}</div>
     <div class="blink" style="text-align:center;margin-top:20px">TOCA PARA EMPEZAR</div></div>`, {go: start});
   const tm = setTimeout(start, 3600);
@@ -1301,7 +1310,7 @@ function helpHTML(inMatch) {
     <b>SHIFT</b> sprint · <b>C</b> cambiar jugador · <b>ESC</b> / <b>P</b> pausa</div></div>
   <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Joystick: mover.<br>A: CHUTAR / SEGADA · B: PASAR / DEFENDER · X: CAMBIO de jugador · Y: SPRINT · START: pausa · SELECT: sonido.<br>En los menús, A, B, X, Y y START aceptan; el joystick mueve la selección.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
   <div class="panel"><h3>Mando</h3><div class="keys">Stick / cruceta mover · A chutar/entrada · X o B pase/cambio · Y cambiar · RB/RT sprint · START pausa</div></div>
-  <div class="panel"><h3>Reglas</h3><div class="muted">Fútbol 7: portero + 6. Dos partes de 25 minutos (el tiempo de juego real se cambia en Opciones). En la Copa, si hay empate se decide en una tanda de penaltis.</div></div></div>`;
+  <div class="panel"><h3>Reglas</h3><div class="muted">Fútbol 7: portero + 6. Antes de cada partido puedes elegir la formación (1-3-2-1, 1-3-1-2, 1-2-3-1, 1-2-2-2 o 1-3-3) y la dificultad (fácil, medio o difícil). Dos partes de 25 minutos (el tiempo de juego real se cambia en Opciones). En la Copa, si hay empate se decide en una tanda de penaltis.</div></div></div>`;
 }
 function opcionesScreen() {
   const o = (k, v, label) => `<button class="btn ${settings[k] === v ? 'on' : ''}" data-a="set" data-v="${k}:${v}">${label}</button>`;
@@ -1349,17 +1358,29 @@ function pickRival() {
     {back: mainMenu, pick: id => lineupScreen(id, {type: 'libre', label: 'AMISTOSO', onEnd: r => resultScreen(r, 'PARTIDO LIBRE', mainMenu)}, pickRival)});
 }
 // ----- alineación -----
+G.form = (() => { const f = store.get('formacion', '1-2-2-2'); return FORMS[f] ? f : '1-2-2-2'; })();
 G.lineup = (() => { const l = store.get('lineup', DEFAULT_LINEUP); return l.length === 7 && l.every(n => byNum(n) && !byNum(n).inj) ? l : DEFAULT_LINEUP.slice(); })();
+// Coloca a los 6 jugadores de campo según su posición: defensas atrás, medios en el centro, delanteros arriba
+function autoArrange() {
+  const rank = {POR: -1, DEF: 0, MED: 1, DEL: 2};
+  const out = G.lineup.slice(1).map(byNum).sort((a, b) => rank[a.pos] - rank[b.pos] || (b.def - b.sho) - (a.def - a.sho));
+  const slots = FORMS[G.form].map((f, i) => ({f, i})).slice(1).sort((a, b) => a.f.u - b.f.u || a.i - b.i);
+  slots.forEach((sl, k) => { G.lineup[sl.i] = out[k].n; });
+  store.set('lineup', G.lineup);
+}
 function lineupScreen(oppId, ctx, back) {
   let sel = null;
   const draw = () => {
     const opp = TEAMS[oppId];
+    const FORM = FORMS[G.form];
     const slots = FORM.map((f, i) => { const p = byNum(G.lineup[i]); return `<button class="slot ${sel === 's' + i ? 'sel' : ''}" style="left:${6 + f.u * 120}%;top:${f.v * 100}%" data-a="slot" data-v="${i}"><img class="px" src="${faceURL(p)}" alt="">${p.n} ${esc(p.name)}</button>`; }).join('');
     const bench = PLAYERS.filter(p => !G.lineup.includes(p.n)).sort((a, b) => a.n - b.n).map(p => `<button class="${p.inj ? 'out' : ''} ${sel === 'b' + p.n ? 'sel' : ''}" data-a="bench" data-v="${p.n}" ${p.inj ? 'disabled' : ''}><img class="px" src="${faceURL(p)}" alt="">${p.n} ${esc(p.name)} ${p.inj ? '· LESIÓN' : ''}</button>`).join('');
     screen(`<div class="wrap">${header('ALINEACIÓN')}
       <div class="panel" style="display:flex;align-items:center;gap:10px;justify-content:center;font-size:10px;flex-wrap:wrap">
         <img class="px" src="${TEAMS.BAR.crestURL}" width="32" height="32" alt="">BARCELONETA <span style="color:var(--gold)">VS</span> ${esc(opp.name)}<img class="px" src="${opp.crestURL}" width="32" height="32" alt="">
         <div class="muted" style="width:100%;text-align:center">${esc(ctx.label || '')}</div></div>
+      <div class="panel"><h3>Formación</h3><div class="opt">${FORM_IDS.map(f => `<button class="btn ${G.form === f ? 'on' : ''}" data-a="form" data-v="${f}">${f}</button>`).join('')}</div>
+        <h3 style="margin-top:12px">Dificultad</h3><div class="opt">${DIFF.map((d, i) => `<button class="btn ${settings.diff === i ? 'on' : ''}" data-a="diff" data-v="${i}">${d.name}</button>`).join('')}</div></div>
       <div class="pitch">${slots}</div>
       <p class="muted" style="text-align:center">Toca un titular y luego un suplente (u otro titular) para cambiarlos.</p>
       <div class="bench">${bench}</div>
@@ -1368,7 +1389,9 @@ function lineupScreen(oppId, ctx, back) {
       slot: v => { const k = 's' + v; if (sel && sel[0] === 's' && sel !== k) { const i = +sel.slice(1), j = +v; [G.lineup[i], G.lineup[j]] = [G.lineup[j], G.lineup[i]]; sel = null; }
         else if (sel && sel[0] === 'b') { G.lineup[+v] = +sel.slice(1); sel = null; } else sel = sel === k ? null : k; store.set('lineup', G.lineup); draw(); },
       bench: v => { if (sel && sel[0] === 's') { G.lineup[+sel.slice(1)] = +v; sel = null; } else sel = sel === 'b' + v ? null : 'b' + v; store.set('lineup', G.lineup); draw(); },
-      play: () => { SFX.ok(); vsScreen(oppId, ctx); }});
+      form: v => { G.form = v; store.set('formacion', v); autoArrange(); SFX.ok(); draw(); },
+      diff: v => { settings.diff = +v; store.set('settings', settings); SFX.ok(); draw(); },
+      play: () => { SFX.ok(); ctx.oppForm = FORM_IDS[Math.floor(Math.random() * FORM_IDS.length)]; vsScreen(oppId, ctx); }});
   };
   draw();
 }
