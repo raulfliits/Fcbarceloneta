@@ -996,6 +996,8 @@ function screen(html, actions = {}, clear = false) {
   screenActions = actions;
   const f = s.querySelector('.btn, button'); if (f && !isTouch) f.focus({preventScroll: true});
 }
+// Confirmación sin diálogos: el primer toque pide confirmar, el segundo ejecuta
+function sure(el) { if (el && el.dataset.sure) return true; if (el) { el.dataset.sure = '1'; el.textContent = '¿Seguro? Toca otra vez'; } return false; }
 function hideScreen() { $('#screen').style.display = 'none'; $('#screen').innerHTML = ''; }
 $('#screen').addEventListener('click', e => {
   const el = e.target.closest('[data-a]'); if (!el) return;
@@ -1070,7 +1072,7 @@ function opcionesScreen() {
     <div class="panel"><h3>Datos guardados</h3><div class="opt"><button class="btn" data-a="reset">Borrar liga, copa y fotos</button></div></div></div>`, {
     back: mainMenu,
     set: v => { const [k, val] = v.split(':'); settings[k] = k === 'sound' ? val === 'true' : Number(val); store.set('settings', settings); if (k === 'sound') { settings.sound ? startMusic() : stopMusic(); } opcionesScreen(); },
-    reset: () => { if (confirm('¿Borrar la liga, la copa y la asignación de fotos?')) { store.del('liga'); store.del('copa'); store.del('caras'); store.del('lineup'); for (const k in faceMap) delete faceMap[k]; opcionesScreen(); } }});
+    reset: (v, el) => { if (sure(el)) { store.del('liga'); store.del('copa'); store.del('caras'); store.del('lineup'); for (const k in faceMap) delete faceMap[k]; opcionesScreen(); } }});
 }
 function statBars(p) {
   const rows = p.pos === 'POR' ? [['POR', p.gk], ['VEL', p.pac], ['PAS', p.pas], ['DEF', p.def]] : [['VEL', p.pac], ['TIR', p.sho], ['PAS', p.pas], ['DEF', p.def]];
@@ -1182,7 +1184,7 @@ function ligaScreen() {
     back: mainMenu,
     play: () => { const home = ourM[0] === 'BAR', opp = home ? ourM[1] : ourM[0]; lineupScreen(opp, {type: 'liga', label: `LIGA ACDEA · JORNADA ${L.j + 1} · ${home ? 'LOCAL' : 'VISITANTE'}`, onEnd: r => ligaResult(r)}, ligaScreen); },
     sim: () => { const home = ourM[0] === 'BAR', opp = home ? ourM[1] : ourM[0]; const [a, b] = simScore('BAR', opp); ligaResult({gf: a, ga: b, scorers: simScorers(a), oppScorers: [], opp, sim: true}); },
-    reset: () => { if (confirm('¿Empezar una liga nueva?')) { newLeague(); ligaScreen(); } },
+    reset: (v, el) => { if (sure(el)) { newLeague(); ligaScreen(); } },
     real: realTable});
 }
 function ligaResult(r) {
