@@ -21,12 +21,12 @@ const PLAYERS = [
   {n:12, name:'JUAN',    pos:'MED', pac:6, sho:5, pas:6, def:6, cara:13, inj:true},
   {n:14, name:'PAU',     pos:'DEF', pac:6, sho:5, pas:6, def:7, cara:9},
   {n:15, name:'CIRO',    pos:'DEF', pac:6, sho:4, pas:6, def:7, cara:17, fija:true}, // foto oficial
-  {n:17, name:'VICENTE', pos:'DEF', pac:6, sho:4, pas:5, def:7, cara:11},
+  {n:17, name:'VICENTE', pos:'DEF', pac:6, sho:4, pas:5, def:7, cara:21, fija:true}, // foto oficial
   {n:19, name:'MATHIAS', pos:'DEL', pac:7, sho:7, pas:6, def:5, cara:18, fija:true}, // foto oficial
   {n:22, name:'BRUNO',   pos:'MED', pac:6, sho:6, pas:6, def:5, cara:20, fija:true, inj:true}, // foto oficial
 ];
 const DEFAULT_LINEUP = [1, 4, 3, 6, 11, 7, 9]; // dorsales: POR, DEF, DEF, MED, MED, DEL, DEL
-const NUM_CARAS = 20;
+const NUM_CARAS = 21;
 // Tono de piel y pelo de cada foto (para el sprite en el campo)
 const CARA_LOOK = [
   {skin:'#e8b98e', hair:'#5a3a22'},
@@ -41,6 +41,7 @@ const CARA_LOOK = [
   {skin:'#d9a07a', hair:'#241c1a'}, // 18: Mathias (foto oficial)
   {skin:'#f0c8a2', hair:'#d6b46a'}, // 19: David (foto oficial)
   {skin:'#ebc19e', hair:'#3b2a20'}, // 20: Bruno (foto oficial)
+  {skin:'#e0ac86', hair:'#1f1a1c'}, // 21: Vicente (foto oficial)
 ];
 
 // Rivales de la temporada 26/27 (Liga ACDEA + amistosos de pretemporada).
