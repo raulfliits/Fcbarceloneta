@@ -278,27 +278,22 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
   c.innerHTML = `<div class="c-glass"><div class="c-screen" id="slot"></div></div><i class="c-led"></i>
     <div class="c-brand"><b>MARINERS</b> BRICK <small>SUB 12 A</small></div>
     <div class="c-ctrl">
-      <div class="c-dpad" id="cDpad" aria-label="Cruceta"><b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b><i></i></div>
-      <div class="c-mid"><div><button id="cSel" aria-label="Sonido"></button>SELECT</div><div><button id="cStart" aria-label="Pausa"></button>START</div></div>
+      <div class="c-stick l" id="cStickL" aria-label="Joystick"><div class="c-knob"></div></div>
       <div class="c-abxy">
-        <div class="k x"><button id="cX" aria-label="Pausa">X</button><span>PAUSA</span></div>
         <div class="k y"><button id="cY" aria-label="Sprint">Y</button><span>SPRINT</span></div>
-        <div class="k a"><button id="cA" aria-label="Chutar o segada">A</button><span>CHUTAR<br>SEGADA</span></div>
         <div class="k b"><button id="cB" aria-label="Pasar o defender">B</button><span>PASAR<br>DEFENDER</span></div>
+        <div class="k a"><button id="cA" aria-label="Chutar o segada">A</button><span>CHUTAR<br>SEGADA</span></div>
       </div>
-      <div class="c-stick l" id="cStickL" aria-label="Joystick: mover"><div class="c-knob"></div><em>MOVER</em></div>
-      <div class="c-stick r" id="cStickR" aria-label="Joystick: apuntar"><div class="c-knob"></div><em>APUNTAR</em></div>
-      <div class="c-foot"><div class="spk">${'<i></i>'.repeat(14)}</div>
-        <div class="sys"><button id="cHome" aria-label="Sonido">♪</button><button id="cPause" aria-label="Pausa">■</button><button id="cPlay" aria-label="Seguir">▶</button></div>
-        <div class="spk">${'<i></i>'.repeat(14)}</div></div>
+      <div class="c-mid"><div><button id="cSel" aria-label="Sonido"></button>SELECT</div><div><button id="cStart" aria-label="Pausa"></button>START</div></div>
+      <div class="c-foot"><div class="spk">${'<i></i>'.repeat(14)}</div><div class="spk">${'<i></i>'.repeat(14)}</div></div>
     </div>`;
   document.body.prepend(c); c.querySelector('#slot').appendChild($('#app'));
   document.documentElement.classList.add('gb');
-  // movimiento = cruceta o joystick izquierdo (el que se esté usando)
-  const mv = {dx: 0, dy: 0, sx: 0, sy: 0};
+  // movimiento con el joystick
+  const mv = {sx: 0, sy: 0};
   let menuY = 0;
   const applyMove = () => {
-    const useStick = mv.sx || mv.sy; touch.x = useStick ? mv.sx : mv.dx; touch.y = useStick ? mv.sy : mv.dy;
+    touch.x = mv.sx; touch.y = mv.sy;
     if (G.mode === 'menu') { const my = touch.y > 0.6 ? 1 : touch.y < -0.6 ? -1 : (!touch.y && touch.x > 0.6) ? 1 : (!touch.y && touch.x < -0.6) ? -1 : 0;
       if (my && my !== menuY) menuKey({code: my > 0 ? 'ArrowDown' : 'ArrowUp', preventDefault() {}}); menuY = my; }
   };
@@ -309,15 +304,6 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
     const end = e => { if (e.pointerId !== pid) return; pid = null; el.classList.remove('on'); onEnd(); };
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   };
-  // cruceta (8 direcciones)
-  const pad = c.querySelector('#cDpad'), ar = {u: pad.querySelector('.u'), d: pad.querySelector('.d'), l: pad.querySelector('.l'), r: pad.querySelector('.r')};
-  drag(pad, e => {
-    const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    let x = 0, y = 0;
-    if (hyp(dx, dy) > r.width * 0.1) { const a = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI / 4; x = Math.round(Math.cos(a)); y = Math.round(Math.sin(a)); }
-    const m = hyp(x, y) || 1; mv.dx = x / m; mv.dy = y / m; applyMove();
-    ar.u.classList.toggle('on', y < 0); ar.d.classList.toggle('on', y > 0); ar.l.classList.toggle('on', x < 0); ar.r.classList.toggle('on', x > 0);
-  }, () => { mv.dx = mv.dy = 0; applyMove(); for (const k in ar) ar[k].classList.remove('on'); });
   // joysticks analógicos
   const stick = (el, set) => {
     const knob = el.querySelector('.c-knob');
@@ -330,7 +316,6 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
     }, () => { knob.style.transform = 'translate(-50%,-50%)'; set(0, 0); });
   };
   stick(c.querySelector('#cStickL'), (x, y) => { mv.sx = x; mv.sy = y; applyMove(); });
-  stick(c.querySelector('#cStickR'), (x, y) => { touch.ax = x; touch.ay = y; });
   // botones de juego
   for (const [id, key] of [['#cA', 'A'], ['#cB', 'B'], ['#cY', 'S']]) {
     const el = c.querySelector(id);
@@ -346,11 +331,9 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
   }
   // pausa / sonido
   const tap = (id, fn) => c.querySelector(id).addEventListener('pointerdown', e => { e.preventDefault(); ac(); fn(); });
-  const pause = () => { if (G.mode === 'match') togglePause(); };
-  tap('#cX', pause); tap('#cStart', pause); tap('#cPause', pause);
-  tap('#cPlay', () => { if (G.mode === 'match' && G.paused) togglePause(); });
+  tap('#cStart', () => { if (G.mode === 'match') togglePause(); else if (G.mode === 'menu') { const f = document.activeElement; if (f && f.dataset && f.dataset.a) f.click(); } });
   const snd = () => { settings.sound = !settings.sound; store.set('settings', settings); if (settings.sound) { if (G.mode === 'menu') startMusic(); SFX.ok(); } else stopMusic(); };
-  tap('#cSel', snd); tap('#cHome', snd);
+  tap('#cSel', snd);
   new ResizeObserver(() => fit()).observe(c.querySelector('#slot'));
 })();
 function fitConsole() {
@@ -1309,7 +1292,7 @@ function helpHTML(inMatch) {
     <b>Z</b> / <b>J</b> / <b>ESPACIO</b> con balón: CHUTAR (mantén para más potencia y apunta con ↑↓) · sin balón: SEGADA<br>
     <b>X</b> / <b>K</b> con balón: PASAR (hacia donde apuntas) · sin balón: DEFENDER (mantén: presiona y roba)<br>
     <b>SHIFT</b> sprint · <b>C</b> cambiar jugador · <b>ESC</b> / <b>P</b> pausa</div></div>
-  <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Joystick izquierdo o cruceta: mover · Joystick derecho: apuntar el pase o el chut.<br>A: CHUTAR / SEGADA · B: PASAR / DEFENDER · Y: SPRINT · X o START: PAUSA · SELECT: sonido.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
+  <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Joystick: mover.<br>A: CHUTAR / SEGADA · B: PASAR / DEFENDER · Y: SPRINT · START: pausa · SELECT: sonido.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
   <div class="panel"><h3>Mando</h3><div class="keys">Stick / cruceta mover · A chutar/entrada · X o B pase/cambio · Y cambiar · RB/RT sprint · START pausa</div></div>
   <div class="panel"><h3>Reglas</h3><div class="muted">Fútbol 7: portero + 6. Dos partes de 25 minutos (el tiempo de juego real se cambia en Opciones). En la Copa, si hay empate se decide en una tanda de penaltis.</div></div></div>`;
 }

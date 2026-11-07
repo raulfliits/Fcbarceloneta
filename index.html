@@ -177,14 +177,14 @@ html.gb #touch{display:none!important}
 .c-brand{display:flex;align-items:center;gap:6px;margin:8px 0 0 3%;font-size:clamp(7px,2.3cqw,10px);color:#6d6a64;letter-spacing:.06em}
 .c-brand b{color:var(--btn);font-weight:normal}
 .c-brand small{background:#7d7a74;color:#ece9e4;padding:2px 4px;font-size:.8em}
-.c-ctrl{flex:1 1 auto;min-height:0;display:grid;grid-template:"pad mid abxy" auto "ls mid2 rs" 1fr "foot foot foot" auto/1fr auto 1fr;align-items:center;justify-items:center;padding:0 2%}
+.c-ctrl{flex:1 1 auto;min-height:0;display:grid;grid-template:"ls abxy" 1fr "mid mid" auto "foot foot" auto/1fr 1fr;align-items:center;justify-items:center;padding:0 2%}
 .c-dpad{grid-area:pad;width:clamp(96px,30cqw,140px);aspect-ratio:1;display:grid;grid-template:1fr 1fr 1fr/1fr 1fr 1fr;touch-action:none;filter:drop-shadow(0 4px 0 #1a1a1e)}
 .c-dpad b,.c-dpad i{background:#3a3a40;display:flex;align-items:center;justify-content:center;color:#5c5c66;font-size:9px;font-weight:normal}
 .c-dpad i{grid-area:2/2}.c-dpad i:after{content:"";width:46%;aspect-ratio:1;border-radius:50%;box-shadow:inset 0 0 0 2px #2a2a30}
 .c-dpad .u{grid-area:1/2;border-radius:5px 5px 0 0}.c-dpad .d{grid-area:3/2;border-radius:0 0 5px 5px}
 .c-dpad .l{grid-area:2/1;border-radius:5px 0 0 5px}.c-dpad .r{grid-area:2/3;border-radius:0 5px 5px 0}
 .c-dpad b.on{background:#4a4a52;color:#f6d34a}
-.c-mid{grid-area:mid;display:flex;gap:10px;align-self:start;margin-top:8%}
+.c-mid{grid-area:mid;display:flex;gap:18px;margin:4px 0}
 .c-mid div{display:grid;justify-items:center;gap:5px;font-size:6px;color:#6d6a64}
 .c-mid button{width:clamp(34px,11cqw,48px);height:12px;border:0;border-radius:8px;background:#f2f0ec;box-shadow:0 2px 0 #9e998f;touch-action:none;padding:0}
 .c-abxy{grid-area:abxy;position:relative;width:clamp(116px,36cqw,170px);aspect-ratio:1}
@@ -192,12 +192,12 @@ html.gb #touch{display:none!important}
 .c-abxy button{width:100%;height:100%;border:0;border-radius:50%;padding:0;touch-action:none;color:#e9b9c1;font:clamp(9px,3cqw,13px) var(--f);
  background:radial-gradient(circle at 38% 32%,#a33447,var(--btn) 60%);box-shadow:0 4px 0 var(--btn2),0 0 0 2px #c2bdb6}
 .c-abxy span{position:absolute;white-space:nowrap;font-size:clamp(5px,1.7cqw,7px);color:#5a1424;line-height:1.4;text-align:center}
-.c-abxy .x{left:34.5%;top:0}.c-abxy .x span{bottom:104%}
-.c-abxy .a{right:0;top:34.5%}.c-abxy .a span{top:104%;right:-12%}
-.c-abxy .b{left:34.5%;bottom:0}.c-abxy .b span{top:104%}
-.c-abxy .y{left:0;top:34.5%}.c-abxy .y span{top:104%;left:-6%}
+.c-abxy .y{left:34.5%;top:2%}.c-abxy .y span{bottom:104%}
+.c-abxy .b{left:2%;top:50%}.c-abxy .b span{top:104%}
+.c-abxy .a{right:2%;top:50%}.c-abxy .a span{top:104%}
+.c-abxy .k{width:36%}
 .c-abxy .a button{background:radial-gradient(circle at 38% 32%,#e0475c,#b80a26 60%);color:#ffd9de}
-.c-stick{width:clamp(76px,25cqw,112px);aspect-ratio:1;border-radius:50%;position:relative;touch-action:none;background:#f4f2ee;box-shadow:0 0 0 2px #b0aba3,inset 0 3px 6px rgba(0,0,0,.25)}
+.c-stick{width:clamp(110px,38cqw,170px);aspect-ratio:1;border-radius:50%;position:relative;touch-action:none;background:#f4f2ee;box-shadow:0 0 0 2px #b0aba3,inset 0 3px 6px rgba(0,0,0,.25)}
 .c-stick.l{grid-area:ls}.c-stick.r{grid-area:rs}
 .c-knob{position:absolute;left:50%;top:50%;width:82%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);
  background:radial-gradient(circle at 40% 35%,#4a4a52,#232328 65%);box-shadow:0 5px 0 #121215,inset 0 0 0 5px #2c2c33}
@@ -212,12 +212,12 @@ html.gb #touch{display:none!important}
 /* Móvil en horizontal: cruceta y joystick a la izquierda, botones y joystick a la derecha */
 @media (orientation:landscape) and (max-height:560px){
  #console{width:calc(100vw - 8px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px));height:calc(100dvh - 8px);top:4px;
-  display:grid;grid-template:"pad glass abxy" 1fr "ls glass rs" 1fr "mid brand foot" auto/minmax(150px,1fr) auto minmax(150px,1fr);padding:8px 10px 6px;border-radius:24px;gap:0 10px}
+  display:grid;grid-template:"ls glass abxy" 1fr "mid brand foot" auto/minmax(150px,1fr) auto minmax(150px,1fr);padding:8px 10px 6px;border-radius:24px;gap:0 10px}
  .c-glass{grid-area:glass;align-self:center;height:min(calc(100cqh - 30px),calc((100cqw - 340px) * .75 + 16px));display:flex;padding:8px;border-radius:10px}
  .c-glass .c-screen{height:100%;width:auto;max-height:none}
  .c-brand{grid-area:brand;justify-content:center;margin:4px 0 0}
  .c-ctrl{display:contents}
- .c-dpad{width:min(80%,104px)}.c-abxy{width:min(85%,112px);margin-top:10px}.c-abxy .x span{bottom:auto;top:30%;left:auto;right:108%}.c-stick{width:min(56%,78px)}.c-led{display:none}
+ .c-abxy{width:min(90%,136px);align-self:center;margin-top:12px}.c-stick{width:min(80%,130px);align-self:center}.c-mid{justify-self:center}.c-led{display:none}
  .c-mid{grid-area:mid;align-self:center;margin:0}
  .c-foot{grid-area:foot;padding:0;justify-content:center}.c-foot .spk{display:none}
 }
