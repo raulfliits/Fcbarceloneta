@@ -1304,7 +1304,7 @@ function mainMenu() {
       <button class="btn" data-a="penaltis">Penaltis<small>Tanda directa contra el rival que elijas</small></button>
       <button class="btn" data-a="plantilla">Plantilla<small>Convocados, dorsales y fotos</small></button>
       <button class="btn" data-a="opciones">Opciones<small>${settings.dur} min · ${DIFF[settings.diff].name} · Sonido ${settings.sound ? 'sí' : 'no'}</small></button>
-      <button class="btn" data-a="ayuda">Cómo se juega</button>
+      <button class="btn" data-a="ayuda">CÓMO SE JUEGA</button>
     </div></div>`, {
     libre: pickRival, liga: ligaScreen, copa: copaScreen, penaltis: penRival, plantilla: plantillaScreen, opciones: opcionesScreen,
     ayuda: () => screen(helpHTML(), {back: mainMenu})});
