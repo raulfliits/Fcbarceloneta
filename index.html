@@ -162,9 +162,9 @@ html.gb body{background:radial-gradient(ellipse at 50% 30%,#2b2d33,#0b0b0e 70%)}
 html.gb #app{position:absolute;left:0;top:0;inset:auto;padding:0;transform-origin:0 0}
 html.gb #touch{display:none!important}
 #console{--body:#d3cfc9;--body2:#bdb8b1;--edge:#a39e96;--btn:#7a2232;--btn2:#5a1424;--ink2:#3a3a40;
- position:fixed;left:50%;transform:translateX(-50%);box-sizing:border-box;
- top:calc(3px + env(safe-area-inset-top,0px));height:calc(100dvh - 6px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
- width:min(calc(100vw - 6px),calc((100dvh - 6px)*.62));container-type:size;
+ --vh:calc(100dvh - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));--vw:calc(100vw - 12px);
+ position:fixed;left:50%;top:calc(50% + (env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)) / 2);transform:translate(-50%,-50%);box-sizing:border-box;
+ width:min(var(--vw),calc(var(--vh) * .64));height:min(var(--vh),calc(var(--vw) / .64));container-type:size;
  display:flex;flex-direction:column;padding:2.2% 2.2% 0;
  background:linear-gradient(170deg,#dcd8d2,var(--body) 40%,var(--body2));border-radius:18px 18px 26px 26px;
  box-shadow:inset 0 0 0 2px #ebe8e3,inset -4px -6px 0 var(--edge),0 20px 60px rgba(0,0,0,.6);font-family:var(--f);color:var(--ink2)}
@@ -192,10 +192,10 @@ html.gb #touch{display:none!important}
 .c-abxy button{width:100%;height:100%;border:0;border-radius:50%;padding:0;touch-action:none;color:#e9b9c1;font:clamp(9px,3cqw,13px) var(--f);
  background:radial-gradient(circle at 38% 32%,#a33447,var(--btn) 60%);box-shadow:0 4px 0 var(--btn2),0 0 0 2px #c2bdb6}
 .c-abxy span{position:absolute;white-space:nowrap;font-size:clamp(5px,1.7cqw,7px);color:#5a1424;line-height:1.4;text-align:center}
-.c-abxy .y{left:34.5%;top:2%}.c-abxy .y span{bottom:104%}
-.c-abxy .b{left:2%;top:50%}.c-abxy .b span{top:104%}
-.c-abxy .a{right:2%;top:50%}.c-abxy .a span{top:104%}
-.c-abxy .k{width:36%}
+.c-abxy .x{left:34.5%;top:0}.c-abxy .x span{bottom:104%}
+.c-abxy .y{left:0;top:34.5%}.c-abxy .y span{top:104%}
+.c-abxy .a{right:0;top:34.5%}.c-abxy .a span{top:104%}
+.c-abxy .b{left:34.5%;bottom:0}.c-abxy .b span{top:104%}
 .c-abxy .a button{background:radial-gradient(circle at 38% 32%,#e0475c,#b80a26 60%);color:#ffd9de}
 .c-stick{width:clamp(110px,38cqw,170px);aspect-ratio:1;border-radius:50%;position:relative;touch-action:none;background:#f4f2ee;box-shadow:0 0 0 2px #b0aba3,inset 0 3px 6px rgba(0,0,0,.25)}
 .c-stick.l{grid-area:ls}.c-stick.r{grid-area:rs}
@@ -211,13 +211,13 @@ html.gb #touch{display:none!important}
 #console button:active,#console button.on{filter:brightness(1.25);translate:0 2px;box-shadow:none}
 /* Móvil en horizontal: cruceta y joystick a la izquierda, botones y joystick a la derecha */
 @media (orientation:landscape) and (max-height:560px){
- #console{width:calc(100vw - 8px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px));height:calc(100dvh - 8px);top:4px;
+ #console{--vh:calc(100dvh - 12px);--vw:calc(100vw - 12px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px));width:min(var(--vw),calc(var(--vh) * 2.05));height:min(var(--vh),calc(var(--vw) / 2.05));top:50%;
   display:grid;grid-template:"ls glass abxy" 1fr "mid brand foot" auto/minmax(150px,1fr) auto minmax(150px,1fr);padding:8px 10px 6px;border-radius:24px;gap:0 10px}
  .c-glass{grid-area:glass;align-self:center;height:min(calc(100cqh - 30px),calc((100cqw - 340px) * .75 + 16px));display:flex;padding:8px;border-radius:10px}
  .c-glass .c-screen{height:100%;width:auto;max-height:none}
  .c-brand{grid-area:brand;justify-content:center;margin:4px 0 0}
  .c-ctrl{display:contents}
- .c-abxy{width:min(90%,136px);align-self:center;margin-top:12px}.c-stick{width:min(80%,130px);align-self:center}.c-mid{justify-self:center}.c-led{display:none}
+ .c-abxy{width:min(90%,140px);align-self:center;margin-top:8px}.c-abxy .x span{bottom:auto;top:30%;right:106%;left:auto}.c-stick{width:min(80%,130px);align-self:center}.c-mid{justify-self:center}.c-led{display:none}
  .c-mid{grid-area:mid;align-self:center;margin:0}
  .c-foot{grid-area:foot;padding:0;justify-content:center}.c-foot .spk{display:none}
 }

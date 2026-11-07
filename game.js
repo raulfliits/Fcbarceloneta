@@ -245,7 +245,7 @@ function pollInput() {
   inp.shoot = !!(K.KeyZ || K.KeyJ || K.Space || touch.A || gS);
   inp.pass = !!(K.KeyX || K.KeyK || touch.B || gP);
   inp.sprint = !!(K.ShiftLeft || K.ShiftRight || touch.S || gR);
-  inp.sw = !!(K.KeyC || K.KeyL || gW);
+  inp.sw = !!(K.KeyC || K.KeyL || gW || touch.X);
   inp.shootP = inp.shootP || (inp.shoot && !prevIn.shoot) || !!pend.sP; inp.shootR = inp.shootR || (!inp.shoot && prevIn.shoot) || (!!pend.sR && !inp.shoot);
   inp.passP = inp.passP || (inp.pass && !prevIn.pass) || !!pend.pP; inp.swP = inp.swP || (inp.sw && !prevIn.sw) || !!pend.wP;
   pend.sP = pend.sR = pend.pP = pend.wP = false;
@@ -272,6 +272,14 @@ const isTouch = ('ontouchstart' in window) || matchMedia('(pointer:coarse)').mat
 
 // ---------- CONSOLA (móvil): carcasa MARINERS Boy ----------
 const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconsola/i.test(location.hash));
+// menús con la consola: aceptar la opción marcada (o la primera)
+const screenOpen = () => $('#screen').style.display === 'block';
+function menuAccept() {
+  const s = $('#screen'), btns = [...s.querySelectorAll('[data-a]')].filter(b => !b.disabled && b.offsetParent !== null);
+  let f = document.activeElement;
+  if (!f || !s.contains(f) || !f.dataset || !f.dataset.a) f = btns.find(b => b.dataset.a !== 'back') || btns[0];
+  if (f) f.click();
+}
 (function buildConsole() {
   if (!CONSOLE) return;
   const c = document.createElement('div'); c.id = 'console';
@@ -280,6 +288,7 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
     <div class="c-ctrl">
       <div class="c-stick l" id="cStickL" aria-label="Joystick"><div class="c-knob"></div></div>
       <div class="c-abxy">
+        <div class="k x"><button id="cX" aria-label="Cambiar jugador">X</button><span>CAMBIO</span></div>
         <div class="k y"><button id="cY" aria-label="Sprint">Y</button><span>SPRINT</span></div>
         <div class="k b"><button id="cB" aria-label="Pasar o defender">B</button><span>PASAR<br>DEFENDER</span></div>
         <div class="k a"><button id="cA" aria-label="Chutar o segada">A</button><span>CHUTAR<br>SEGADA</span></div>
@@ -294,7 +303,7 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
   let menuY = 0;
   const applyMove = () => {
     touch.x = mv.sx; touch.y = mv.sy;
-    if (G.mode === 'menu') { const my = touch.y > 0.6 ? 1 : touch.y < -0.6 ? -1 : (!touch.y && touch.x > 0.6) ? 1 : (!touch.y && touch.x < -0.6) ? -1 : 0;
+    if (screenOpen()) { const my = touch.y > 0.6 ? 1 : touch.y < -0.6 ? -1 : (!touch.y && touch.x > 0.6) ? 1 : (!touch.y && touch.x < -0.6) ? -1 : 0;
       if (my && my !== menuY) menuKey({code: my > 0 ? 'ArrowDown' : 'ArrowUp', preventDefault() {}}); menuY = my; }
   };
   const drag = (el, onMove, onEnd) => {
@@ -317,21 +326,19 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
   };
   stick(c.querySelector('#cStickL'), (x, y) => { mv.sx = x; mv.sy = y; applyMove(); });
   // botones de juego
-  for (const [id, key] of [['#cA', 'A'], ['#cB', 'B'], ['#cY', 'S']]) {
+  for (const [id, key] of [['#cA', 'A'], ['#cB', 'B'], ['#cY', 'S'], ['#cX', 'X']]) {
     const el = c.querySelector(id);
     el.addEventListener('pointerdown', e => {
-      e.preventDefault(); touch[key] = true; el.classList.add('on'); el.setPointerCapture(e.pointerId); ac();
-      if (G.mode === 'menu' && $('#screen').style.display === 'block') { // en menús: A elige, B vuelve
-        if (key === 'A') { const f = document.activeElement; if (f && f.dataset && f.dataset.a) f.click(); }
-        if (key === 'B' && screenActions.back) screenActions.back();
-      }
+      e.preventDefault(); el.classList.add('on'); el.setPointerCapture(e.pointerId); ac();
+      if (screenOpen()) { menuAccept(); return; }   // en menús: cualquier botón acepta
+      touch[key] = true;
     });
     const off = () => { touch[key] = false; el.classList.remove('on'); };
     el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
   }
   // pausa / sonido
   const tap = (id, fn) => c.querySelector(id).addEventListener('pointerdown', e => { e.preventDefault(); ac(); fn(); });
-  tap('#cStart', () => { if (G.mode === 'match') togglePause(); else if (G.mode === 'menu') { const f = document.activeElement; if (f && f.dataset && f.dataset.a) f.click(); } });
+  tap('#cStart', () => { if (screenOpen()) menuAccept(); else if (G.mode === 'match') togglePause(); });
   const snd = () => { settings.sound = !settings.sound; store.set('settings', settings); if (settings.sound) { if (G.mode === 'menu') startMusic(); SFX.ok(); } else stopMusic(); };
   tap('#cSel', snd);
   new ResizeObserver(() => fit()).observe(c.querySelector('#slot'));
@@ -1214,7 +1221,7 @@ let screenActions = {};
 function screen(html, actions = {}, clear = false) {
   const s = $('#screen'); s.innerHTML = noAcc(html); s.style.display = 'block'; s.className = clear ? 'clear' : ''; s.scrollTop = 0;
   screenActions = actions;
-  const f = s.querySelector('.btn, button'); if (f && !isTouch) f.focus({preventScroll: true});
+  const f = s.querySelector('.btn.red[data-a]') || s.querySelector('[data-a]:not([data-a=back]):not(div)') || s.querySelector('.btn, button'); if (f && (!isTouch || CONSOLE)) f.focus({preventScroll: true});
 }
 // Confirmación sin diálogos: el primer toque pide confirmar, el segundo ejecuta
 function sure(el) { if (el && el.dataset.sure) return true; if (el) { el.dataset.sure = '1'; el.textContent = '¿Seguro? Toca otra vez'; } return false; }
@@ -1292,7 +1299,7 @@ function helpHTML(inMatch) {
     <b>Z</b> / <b>J</b> / <b>ESPACIO</b> con balón: CHUTAR (mantén para más potencia y apunta con ↑↓) · sin balón: SEGADA<br>
     <b>X</b> / <b>K</b> con balón: PASAR (hacia donde apuntas) · sin balón: DEFENDER (mantén: presiona y roba)<br>
     <b>SHIFT</b> sprint · <b>C</b> cambiar jugador · <b>ESC</b> / <b>P</b> pausa</div></div>
-  <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Joystick: mover.<br>A: CHUTAR / SEGADA · B: PASAR / DEFENDER · Y: SPRINT · START: pausa · SELECT: sonido.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
+  <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Joystick: mover.<br>A: CHUTAR / SEGADA · B: PASAR / DEFENDER · X: CAMBIO de jugador · Y: SPRINT · START: pausa · SELECT: sonido.<br>En los menús, A, B, X, Y y START aceptan; el joystick mueve la selección.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
   <div class="panel"><h3>Mando</h3><div class="keys">Stick / cruceta mover · A chutar/entrada · X o B pase/cambio · Y cambiar · RB/RT sprint · START pausa</div></div>
   <div class="panel"><h3>Reglas</h3><div class="muted">Fútbol 7: portero + 6. Dos partes de 25 minutos (el tiempo de juego real se cambia en Opciones). En la Copa, si hay empate se decide en una tanda de penaltis.</div></div></div>`;
 }
