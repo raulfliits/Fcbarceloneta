@@ -7,9 +7,9 @@
 // ---------- DATOS DEL EQUIPO (editar aquí) ----------
 // pac=velocidad, sho=tiro, pas=pase, def=defensa, gk=portero (1-10)
 // cara = número de foto en /caras (cara-01.png ... cara-14.png). 0 = sin foto.
-// Las caras se pueden reasignar dentro del juego en PLANTILLA.
+// fija:true = foto oficial del jugador (no se puede cambiar en el juego). El resto se puede reasignar en PLANTILLA.
 const PLAYERS = [
-  {n:1,  name:'MARC',    pos:'POR', pac:5, sho:3, pas:5, def:5, gk:8, cara:12},
+  {n:1,  name:'MARC',    pos:'POR', pac:5, sho:3, pas:5, def:5, gk:8, cara:15, fija:true}, // foto oficial
   {n:3,  name:'YOUSSEF', pos:'DEF', pac:7, sho:5, pas:6, def:7, cara:1},
   {n:4,  name:'ABDUL',   pos:'DEF', pac:6, sho:5, pas:6, def:8, cara:2},
   {n:6,  name:'OLIVER',  pos:'MED', pac:7, sho:6, pas:7, def:6, cara:3},
@@ -26,7 +26,7 @@ const PLAYERS = [
   {n:22, name:'BRUNO',   pos:'MED', pac:6, sho:6, pas:6, def:5, cara:0, inj:true},
 ];
 const DEFAULT_LINEUP = [1, 4, 3, 6, 11, 7, 9]; // dorsales: POR, DEF, DEF, MED, MED, DEL, DEL
-const NUM_CARAS = 14;
+const NUM_CARAS = 15;
 // Tono de piel y pelo de cada foto (para el sprite en el campo)
 const CARA_LOOK = [
   {skin:'#e8b98e', hair:'#5a3a22'},
@@ -35,35 +35,36 @@ const CARA_LOOK = [
   {skin:'#efc59c', hair:'#7a5232'}, {skin:'#f0c8a0', hair:'#6b4528'}, {skin:'#efc59c', hair:'#9a7044'},
   {skin:'#c99068', hair:'#1d1a1a'}, {skin:'#c99068', hair:'#1d1a1a'}, {skin:'#f0c8a0', hair:'#3a2a20'},
   {skin:'#f3cfa8', hair:'#cfa45a'}, {skin:'#b97f55', hair:'#1d1a1a'},
+  {skin:'#eab9a0', hair:'#3a2b26'}, // 15: Marc (foto oficial)
 ];
 
 // Rivales de la temporada 26/27 (Liga ACDEA + amistosos de pretemporada).
 // str = fuerza (según la clasificación real). Colores de equipación orientativos: se pueden cambiar.
 const TEAMS = {
   BAR:  {name:'C.F. BARCELONETA', short:'BAR', str:80, crest:'escudos/barceloneta.png',
-         kit:{s:'#d8202f', s2:'#ffffff', pat:'stripes', sh:'#d8202f', so:'#d8202f', gk:'#ff7a1a', gksh:'#d8202f'}},
+         kit:{s:'#d8202f', s2:'#ffffff', pat:'stripes', sh:'#d8202f', so:'#d8202f', gk:'#127a55', gksh:'#d8202f'}},
   OSAB: {name:'ONA SANT ADRIÀ B', short:'OSB', str:85, comp:'liga',
          kit:{s:'#1d63c6', s2:'#ffffff', pat:'hoops', sh:'#ffffff', so:'#1d63c6', gk:'#2b2b2b', gksh:'#2b2b2b'}},
   MON:  {name:'CD MONOPOL', short:'MNP', str:82, comp:'liga',
-         kit:{s:'#f2c81e', s2:'#f2c81e', pat:'plain', sh:'#1b1b1b', so:'#f2c81e', gk:'#3b7d3b', gksh:'#1b1b1b'}},
+         kit:{s:'#f2c81e', s2:'#f2c81e', pat:'plain', sh:'#1b1b1b', so:'#f2c81e', gk:'#6a4bb5', gksh:'#1b1b1b'}},
   PTV:  {name:'PB TRINITAT VELLA', short:'PTV', str:75, comp:'liga',
          kit:{s:'#6d3aa8', s2:'#ffffff', pat:'half', sh:'#ffffff', so:'#6d3aa8', gk:'#2b2b2b', gksh:'#2b2b2b'}},
   BCB:  {name:'PB BARCINO B', short:'BCB', str:71, comp:'liga',
-         kit:{s:'#1c2f6e', s2:'#f2c14e', pat:'stripes', sh:'#1c2f6e', so:'#f2c14e', gk:'#3b7d3b', gksh:'#1b1b1b'}},
+         kit:{s:'#1c2f6e', s2:'#f2c14e', pat:'stripes', sh:'#1c2f6e', so:'#f2c14e', gk:'#6a4bb5', gksh:'#1b1b1b'}},
   FBM:  {name:'F.B. MONTCADA', short:'MTC', str:72, comp:'liga', crest:'escudos/montcada.png',
          kit:{s:'#1b1b1b', s2:'#d8202f', pat:'stripes', sh:'#1b1b1b', so:'#1b1b1b', gk:'#e6e600', gksh:'#1b1b1b'}},
   BCA:  {name:'PB BARCINO A', short:'BCA', str:72, comp:'liga',
-         kit:{s:'#1c2f6e', s2:'#f2c14e', pat:'plain', sh:'#f2c14e', so:'#1c2f6e', gk:'#3b7d3b', gksh:'#1b1b1b'}},
+         kit:{s:'#1c2f6e', s2:'#f2c14e', pat:'plain', sh:'#f2c14e', so:'#1c2f6e', gk:'#6a4bb5', gksh:'#1b1b1b'}},
   CDT:  {name:'CD TRINIDAD', short:'TRI', str:56, comp:'liga',
          kit:{s:'#13a6a0', s2:'#ffffff', pat:'plain', sh:'#ffffff', so:'#13a6a0', gk:'#2b2b2b', gksh:'#2b2b2b'}},
   OSAA: {name:'ONA SANT ADRIÀ A', short:'OSA', str:52, comp:'liga',
          kit:{s:'#5ab4f0', s2:'#ffffff', pat:'hoops', sh:'#1d63c6', so:'#ffffff', gk:'#2b2b2b', gksh:'#2b2b2b'}},
   BCC:  {name:'PB BARCINO C', short:'BCC', str:45, comp:'liga',
-         kit:{s:'#f2c14e', s2:'#1c2f6e', pat:'stripes', sh:'#1c2f6e', so:'#1c2f6e', gk:'#3b7d3b', gksh:'#1b1b1b'}},
+         kit:{s:'#f2c14e', s2:'#1c2f6e', pat:'stripes', sh:'#1c2f6e', so:'#1c2f6e', gk:'#6a4bb5', gksh:'#1b1b1b'}},
   SANTS:{name:'U.E. SANTS', short:'UES', str:68, comp:'amistoso',
          kit:{s:'#ffffff', s2:'#1f8a3c', pat:'half', sh:'#1f8a3c', so:'#ffffff', gk:'#2b2b2b', gksh:'#2b2b2b'}},
   BONP: {name:'BON PASTOR', short:'BPA', str:87, comp:'amistoso',
-         kit:{s:'#2346b8', s2:'#f2d02a', pat:'stripes', sh:'#2346b8', so:'#f2d02a', gk:'#3b7d3b', gksh:'#1b1b1b'}},
+         kit:{s:'#2346b8', s2:'#f2d02a', pat:'stripes', sh:'#2346b8', so:'#f2d02a', gk:'#6a4bb5', gksh:'#1b1b1b'}},
 };
 const LEAGUE_IDS = ['BAR','OSAB','MON','PTV','BCB','FBM','BCA','CDT','OSAA','BCC'];
 const OPP_IDS = Object.keys(TEAMS).filter(k => k !== 'BAR');
@@ -91,7 +92,7 @@ const noAcc = h => String(h).replace(/[ÁÉÍÓÚÀÈÒÏÜ]/g, c => c.normalize
 const byNum = n => PLAYERS.find(p => p.n === n);
 const settings = Object.assign({dur: 4, diff: 1, sound: true}, store.get('settings', {}));
 const faceMap = store.get('caras', {});
-const caraOf = pl => (pl.name in faceMap ? faceMap[pl.name] : pl.cara);
+const caraOf = pl => (pl.fija ? pl.cara : pl.name in faceMap ? faceMap[pl.name] : pl.cara);
 const faceURL = pl => { const c = caraOf(pl); return c ? `caras/cara-${String(c).padStart(2,'0')}.png` : genericFace(pl); };
 const lookOf = pl => CARA_LOOK[caraOf(pl)] || CARA_LOOK[0];
 function poisson(l) { l = Math.min(l, 25); const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= Math.random(); } while (p > L); return k - 1; }
@@ -1324,16 +1325,18 @@ function plantillaScreen() {
     {back: mainMenu, face: v => facePicker(byNum(+v))});
 }
 function facePicker(p) {
+  if (p.fija) { screen(`<div class="wrap">${header('FOTO DE #' + p.n + ' ' + esc(p.name))}<div class="panel" style="text-align:center"><img class="px" src="${faceURL(p)}" alt="" style="width:128px;height:128px;border:4px solid #fff"><p class="muted" style="margin-top:12px">Foto oficial. Para cambiarla hay que cambiar el archivo caras/cara-${String(p.cara).padStart(2, '0')}.png</p></div></div>`, {back: plantillaScreen}); return; }
   const cur = caraOf(p);
   let h = `<div class="wrap">${header('FOTO DE #' + p.n + ' ' + esc(p.name))}<div class="faces">`;
   for (let i = 1; i <= NUM_CARAS; i++) {
+    if (PLAYERS.some(q => q.fija && q.cara === i)) continue;
     const usedBy = PLAYERS.filter(q => q !== p && caraOf(q) === i).map(q => q.name).join(', ');
     h += `<button class="${cur === i ? 'on' : ''}" data-a="pick" data-v="${i}" title="${esc(usedBy)}"><img class="px" src="caras/cara-${String(i).padStart(2, '0')}.png" alt="Cara ${i}"></button>`;
   }
   h += `<button class="${!cur ? 'on' : ''}" data-a="pick" data-v="0"><img class="px" src="${genericFace(p)}" alt="Sin foto"></button></div>
     <p class="muted" style="margin-top:12px">Si una foto ya la usa otro jugador, se intercambian.</p></div>`;
   screen(h, {back: plantillaScreen, pick: v => {
-    v = +v; const other = PLAYERS.find(q => q !== p && v && caraOf(q) === v);
+    v = +v; const other = PLAYERS.find(q => q !== p && !q.fija && v && caraOf(q) === v);
     if (other) faceMap[other.name] = cur; faceMap[p.name] = v; store.set('caras', faceMap); SFX.ok(); plantillaScreen(); }});
 }
 function teamCard(id) { const t = TEAMS[id]; return `<button class="btn team" data-a="pick" data-v="${id}"><img class="px" src="${t.crestURL}" alt="">${esc(t.name)}<em>${t.comp === 'amistoso' ? 'Pretemporada' : 'Liga ACDEA'} · ${'★'.repeat(Math.max(1, Math.round((t.str - 35) / 11)))}</em></button>`; }
