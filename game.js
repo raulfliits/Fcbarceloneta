@@ -14,7 +14,7 @@ const PLAYERS = [
   {n:4,  name:'ABDUL',   pos:'DEF', pac:6, sho:5, pas:6, def:8, cara:16, fija:true}, // foto oficial
   {n:6,  name:'OLIVER',  pos:'MED', pac:7, sho:6, pas:7, def:6, cara:27, fija:true}, // foto oficial
   {n:7,  name:'DAVID',   pos:'DEL', pac:8, sho:9, pas:7, def:4, cara:19, fija:true}, // foto oficial
-  {n:8,  name:'DÍDAC',   pos:'MED', pac:6, sho:5, pas:7, def:6, cara:29, fija:true}, // foto oficial (de la foto del equipo)
+  {n:8,  name:'DÍDAC',   pos:'MED', pac:6, sho:5, pas:7, def:6, cara:29, fija:true}, // foto oficial (de la foto del equipo, sin fondo)
   {n:9,  name:'ORIOL',   pos:'DEL', pac:8, sho:9, pas:6, def:4, cara:24, fija:true}, // foto oficial (Uri)
   {n:10, name:'ALFONS',  pos:'MED', pac:7, sho:6, pas:7, def:5, cara:28, fija:true}, // foto oficial
   {n:11, name:'KENAN',   pos:'MED', pac:7, sho:7, pas:6, def:5, cara:22, fija:true}, // foto oficial
