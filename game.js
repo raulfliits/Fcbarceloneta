@@ -49,7 +49,7 @@ const CARA_LOOK = [
   {skin:'#e8b892', hair:'#6b4a2c'}, // 26: Pau (foto oficial)
   {skin:'#f0c4a0', hair:'#a87c4c'}, // 27: Oliver (foto oficial)
   {skin:'#efc6a6', hair:'#4a3a30'}, // 28: Alfons (foto oficial)
-  {skin:'#ebc29a', hair:'#2a211c'}, // 29: Dídac (foto oficial)
+  {skin:'#ebc29a', hair:'#2a1a14'}, // 29: Dídac (foto oficial)
 ];
 
 // Rivales de la temporada 26/27 (Liga ACDEA + amistosos de pretemporada).
