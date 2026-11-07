@@ -1558,4 +1558,9 @@ function copaResult(r) {
 
 // ---------- ARRANQUE ----------
 buildField(); fit(); titleScreen(); requestAnimationFrame(frame);
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {});
+  // cuando se instala una versión nueva del juego, recarga una vez para usarla entera
+  let reloaded = false; const hadCtrl = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadCtrl || reloaded || G.mode === 'match' || G.mode === 'pens') return; reloaded = true; location.reload(); });
+}
