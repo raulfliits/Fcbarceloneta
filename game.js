@@ -255,6 +255,61 @@ const isTouch = ('ontouchstart' in window) || matchMedia('(pointer:coarse)').mat
   $('#pauseBtn').addEventListener('click', () => togglePause());
 })();
 
+// ---------- CONSOLA (móvil): carcasa MARINERS Boy ----------
+const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconsola/i.test(location.hash));
+(function buildConsole() {
+  if (!CONSOLE) return;
+  const c = document.createElement('div'); c.id = 'console';
+  c.innerHTML = `<div class="c-top"><span>◂ OFF · ON ▸</span><i></i></div>
+    <div class="c-bezel"><div class="c-led"><i></i><span>PILA</span></div><div class="c-screen" id="slot"></div></div>
+    <div class="c-brand">MARINERS <em>Boy</em><small>C.F. BARCELONETA · SUB 12 A</small></div>
+    <div class="c-ctrl">
+      <div class="c-dpad" id="cDpad" aria-label="Cruceta"><b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b><i></i></div>
+      <div class="c-btns">
+        <div class="cb cbA"><button id="cA" aria-label="Chutar o segada"></button><span>CHUTAR<br>SEGADA</span></div>
+        <div class="cb cbB"><button id="cB" aria-label="Pasar o defender"></button><span>PASAR<br>DEFENDER</span></div>
+        <div class="cb cbS"><button id="cS" aria-label="Sprint"></button><span>SPRINT</span></div>
+      </div>
+      <div class="c-spk"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>`;
+  document.body.prepend(c); c.querySelector('#slot').appendChild($('#app'));
+  document.documentElement.classList.add('gb');
+  // cruceta: 8 direcciones, se puede deslizar el dedo
+  const pad = c.querySelector('#cDpad'), arrows = {u: pad.querySelector('.u'), d: pad.querySelector('.d'), l: pad.querySelector('.l'), r: pad.querySelector('.r')};
+  let pid = null;
+  const setDir = e => {
+    const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    let x = 0, y = 0;
+    if (hyp(dx, dy) > r.width * 0.1) { const a = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI / 4; x = Math.round(Math.cos(a)); y = Math.round(Math.sin(a)); }
+    const m = hyp(x, y) || 1; const nx = x / m, ny = y / m;
+    if (G.mode === 'menu' && (x || y) && (x !== touch.x0 || y !== touch.y0)) menuKey({code: y > 0 || (!y && x > 0) ? 'ArrowDown' : 'ArrowUp', preventDefault() {}});
+    touch.x0 = x; touch.y0 = y; touch.x = nx; touch.y = ny;
+    arrows.u.classList.toggle('on', y < 0); arrows.d.classList.toggle('on', y > 0); arrows.l.classList.toggle('on', x < 0); arrows.r.classList.toggle('on', x > 0);
+  };
+  pad.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; pad.setPointerCapture(pid); ac(); setDir(e); });
+  pad.addEventListener('pointermove', e => { if (e.pointerId === pid) setDir(e); });
+  const up = e => { if (e.pointerId !== pid) return; pid = null; touch.x = touch.y = touch.x0 = touch.y0 = 0; for (const k in arrows) arrows[k].classList.remove('on'); };
+  pad.addEventListener('pointerup', up); pad.addEventListener('pointercancel', up);
+  for (const [id, key] of [['#cA', 'A'], ['#cB', 'B'], ['#cS', 'S']]) {
+    const el = c.querySelector(id);
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault(); touch[key] = true; el.classList.add('on'); el.setPointerCapture(e.pointerId); ac();
+      if (G.mode === 'menu' && $('#screen').style.display === 'block') { // en menús: A elige, B vuelve
+        if (key === 'A') { const f = document.activeElement; if (f && f.dataset && f.dataset.a) f.click(); }
+        if (key === 'B' && screenActions.back) screenActions.back();
+      }
+    });
+    const off = () => { touch[key] = false; el.classList.remove('on'); };
+    el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
+  }
+  new ResizeObserver(() => fit()).observe(c.querySelector('#slot'));
+})();
+function fitConsole() {
+  const slot = $('#slot'); if (!slot) return;
+  const w = slot.clientWidth, h = slot.clientHeight, BASE = 440, s = Math.min(1, w / BASE), app = $('#app');
+  app.style.width = (w / s) + 'px'; app.style.height = (h / s) + 'px'; app.style.transform = `scale(${s})`;
+}
+
 // ---------- CAMPO Y ESTADIO ----------
 const VW = 320, VH = 180, SC = 2; // vista en unidades de mundo; el lienzo dibuja a x2 (640x360)
 const F = {x0: 44, y0: 74, x1: 444, y1: 324}; // fútbol 7: 400 x 250
@@ -575,8 +630,21 @@ function humanCtrl(p, dt) {
     if (inp.passP) { const dx = inp.x || inp.y ? inp.x : p.fx, dy = inp.x || inp.y ? inp.y : p.fy; const t = humanPassTarget(p, dx, dy); if (t) passTo(p, t); }
   } else {
     p.charge = 0;
-    if (inp.shootP) tackle(p);
-    if (inp.passP || inp.swP) switchCtrl();
+    if (inp.shootP) tackle(p);             // SEGADA
+    if (inp.pass) defend(p, sp, dt);       // DEFENDER: presiona y roba
+    if (inp.swP) switchCtrl();
+  }
+}
+// Defender: el jugador va solo a por el balón y, al llegar, intenta robarlo sin tirarse
+function defend(p, sp, dt) {
+  const b = M.ball, o = b.owner;
+  const tx = o ? o.x + o.vx * 0.2 : b.x + b.vx * 0.25, ty = o ? o.y + o.vy * 0.2 : b.y + b.vy * 0.25;
+  const dx = tx - p.x, dy = ty - p.y, d = hyp(dx, dy) || 1, v = sp * (inp.sprint && p.stam > 0.05 ? 1 : 0.95);
+  const a = Math.min(1, dt * 12); p.vx += (dx / d * v - p.vx) * a; p.vy += (dy / d * v - p.vy) * a;
+  if (o && o.team !== p.team && d < 9 && p.cool <= 0) {
+    p.cool = 0.6;
+    const pr = clamp(0.3 + (p.st.def - o.st.pas * 0.6 - 2) * 0.05, 0.12, 0.65);
+    if (Math.random() < pr) { b.owner = null; b.vx = (p.x - o.x) * 4; b.vy = (p.y - o.y) * 4; b.last = p; b.noTake = o; b.noTakeT = 0.4; o.stun = 0.25; SFX.tackle(); }
   }
 }
 function switchCtrl() {
@@ -609,7 +677,7 @@ function updatePlayers(dt) {
     if (p.slide > 0) { p.vx = p.fx * 120; p.vy = p.fy * 120; }
     p.x += p.vx * dt; p.y += p.vy * dt;
     const sp = hyp(p.vx, p.vy);
-    if (sp > 6 && p.dive <= 0) { p.fx = p.vx / sp; p.fy = p.vy / sp; p.anim += dt * sp / 26; }
+    if (sp > 6 && p.dive <= 0) { p.fx = p.vx / sp; p.fy = p.vy / sp; p.anim += dt * (1.2 + sp / 40); }
     p.x = clamp(p.x, F.x0 - 14, F.x1 + 14); p.y = clamp(p.y, F.y0 - 12, F.y1 + 10);
     if (b.owner === p) { p.x = clamp(p.x, F.x0 + 3, F.x1 - 3); p.y = clamp(p.y, F.y0 + 2, F.y1 - 2); }
   }
@@ -751,10 +819,11 @@ const cv = $('#cv'), g = cv.getContext('2d');
 g.imageSmoothingEnabled = false;
 const PW = VW * SC, PH = VH * SC; // 640 x 360
 function fit() {
-  const app = $('#app').getBoundingClientRect();
+  fitConsole();
+  const el = $('#app'), app = {width: el.clientWidth, height: el.clientHeight};
   const s = Math.min(app.width / PW, app.height / PH);
   cv.style.width = Math.floor(PW * s) + 'px'; cv.style.height = Math.floor(PH * s) + 'px';
-  const portrait = app.height > app.width;
+  const portrait = app.height > app.width * 0.9;
   $('#stage').style.alignItems = portrait && G.mode !== 'menu' ? 'flex-start' : 'center';
   $('#stage').style.paddingTop = portrait && G.mode !== 'menu' ? '70px' : '0';
 }
@@ -768,14 +837,13 @@ function kitColors(p) {
   const s = gk ? k.gk : k.s, s2 = gk ? shade(k.gk, 0.8) : k.s2;
   return KITC[key] = {s, s2, sD: shade(s, 0.72), s2D: shade(s2, 0.72), pat: gk ? 'plain' : k.pat,
     sh: gk ? k.gksh : k.sh, shD: shade(gk ? k.gksh : k.sh, 0.7), so: gk ? k.gk : k.so, soD: shade(gk ? k.gk : k.so, 0.75),
-    skin: p.look.skin, skinD: shade(p.look.skin, 0.8), hair: p.look.hair, hairL: shade(p.look.hair, 1.35), glove: gk ? '#f4f4f4' : null};
+    band: (gk ? '#f4f4f4' : (k.s2 !== k.s ? k.s2 : shade(k.so, 0.6))), skin: p.look.skin, skinD: shade(p.look.skin, 0.8), hair: p.look.hair, hairL: shade(p.look.hair, 1.35), glove: gk ? '#f4f4f4' : null};
 }
 // Sprite de jugador a 2x: lista de rectángulos [x, y, w, h, color] mirando a la derecha, pies en (0,0)
 function playerParts(p, C) {
   const P = [];
   const R = (x, y, w, h, c) => P.push([x, y, w, h, c]);
   const sp = hyp(p.vx, p.vy), moving = sp > 8;
-  const fr = moving ? Math.floor(p.anim * 4) % 4 : 1;
   const shirtBlock = (x, y, w, h) => {
     for (let i = 0; i < w; i++) {
       let col = C.s;
@@ -800,20 +868,29 @@ function playerParts(p, C) {
     R(2, -10 + lift, 6, 7, C.sh); R(8, -9 + lift, 10, 4, C.so); R(18, -10 + lift, 5, 5, '#1c1c22');
     return P;
   }
-  // piernas
-  const kick = p.kickT > 0;
-  const legA = [4, 1, -3, 1][fr], legB = [-3, 1, 4, 1][fr], liftA = fr === 2 ? -2 : 0, liftB = fr === 0 ? -2 : 0;
-  const leg = (x, lift, near) => {
-    R(x, -15 + lift, 4, 3, C.skin);
-    R(x, -12 + lift, 4, 9, near ? C.so : C.soD); R(x, -12 + lift, 4, 1, shade(C.so, 0.6));
-    R(x, -3 + lift, 6, 3, '#1c1c22'); R(x + 1, -3 + lift, 3, 1, '#e8e8e8');
+  // piernas: ciclo de carrera con zancada, rodilla y pie que se levanta
+  const kick = p.kickT > 0, T = Math.PI * 2;
+  const leg = (ph, near) => {
+    let fx, lift;
+    if (moving) { fx = Math.sin(ph * T) * 7; lift = Math.max(0, Math.cos(ph * T)) * 4; }
+    else { fx = near ? 2 : -2; lift = 0; }
+    const kx = Math.round(fx * 0.5 + (lift > 1 ? 2 : 0)), f = Math.round(fx), l = Math.round(lift);
+    const so = near ? C.so : C.soD, sk = near ? C.skin : C.skinD;
+    R(Math.round(kx * 0.4) - 2, -17, 4, 3, sk);           // muslo
+    R(kx - 2, -15 + Math.round(l * 0.4), 4, 3, sk);        // rodilla
+    R(Math.round((kx + f) / 2) - 2, -12 - Math.round(l * 0.6), 4, 4, so); // espinilla
+    R(f - 2, -8 - l, 4, 5, so); R(Math.round((kx + f) / 2) - 2, -12 - Math.round(l * 0.6), 4, 2, near ? C.band : shade(C.band, 0.75));
+    R(f - 2, -3 - l, 6, 3, '#1c1c22'); R(f - 1, -3 - l, 3, 1, '#e8e8e8');
   };
-  if (kick) { leg(-4, 0, false); R(0, -16, 9, 4, C.so); R(-1, -17, 3, 4, C.skin); R(9, -17, 5, 5, '#1c1c22'); }
-  else { leg(-4 + legB, liftB, false); leg(0 + legA, liftA, true); }
+  const ph = p.anim % 1;
+  if (kick) {
+    leg(0, false);
+    R(0, -16, 9, 4, C.so); R(-1, -17, 3, 4, C.skin); R(9, -17, 5, 5, '#1c1c22');
+  } else { leg(ph + 0.5, false); leg(ph, true); }
   // pantalón
   R(-6, -21, 12, 6, C.sh); R(-6, -16, 12, 1, C.shD); R(-1, -19, 1, 4, C.shD);
   // brazos (el de atrás primero)
-  const sw = moving ? [2, 0, -2, 0][fr] : 0;
+  const sw = moving ? Math.round(Math.sin(p.anim * Math.PI * 2) * 3) : 0;
   R(-9 - sw, -32, 3, 4, C.sD); R(-9 - sw, -28, 3, 5, C.skinD); if (C.glove) R(-9 - sw, -25, 3, 3, C.glove);
   // camiseta
   shirtBlock(-7, -33, 14, 12);
@@ -903,7 +980,7 @@ function render() {
 // HUD
 function showHUD(on) {
   $('#hud').style.display = on ? 'block' : 'none';
-  $('#touch').style.display = on && isTouch ? 'block' : 'none';
+  $('#touch').style.display = on && isTouch && !CONSOLE ? 'block' : 'none';
   fit();
 }
 function updHud() {
@@ -913,16 +990,12 @@ function updHud() {
   $('#sSc').textContent = `${M.score[0]} - ${M.score[1]}`;
   const c = M.ctrl;
   if (c) { $('#ccImg').src = faceURL(c.data); $('#ccNum').textContent = '#' + c.data.n; $('#ccName').textContent = noAcc(c.data.name); }
-  const own = M.ball.owner === c;
-  $('#bA').textContent = own ? 'CHUTAR' : 'ENTRADA'; $('#bB').textContent = own ? 'PASE' : 'CAMBIO';
   updHudTime();
 }
 let lastMin = -1;
 function updHudTime() {
   const m = Math.min(50, Math.floor(M.t / M.len * 50));
   if (m !== lastMin) { lastMin = m; $('#sTm').textContent = m + "'"; }
-  const own = M.ball.owner === M.ctrl, want = own ? 'CHUTAR' : 'ENTRADA';
-  if ($('#bA').textContent !== want) { $('#bA').textContent = want; $('#bB').textContent = own ? 'PASE' : 'CAMBIO'; }
 }
 function showMsg(big, sub, t) {
   $('#bnBig').textContent = noAcc(big); $('#bnSub').innerHTML = noAcc(sub || ''); const bn = $('#banner');
@@ -970,8 +1043,7 @@ function resultScreen(res, title, onCont, extra = '') {
 // ---------- PENALTIS ----------
 let PEN = null;
 function penalties(res, ctx) {
-  G.mode = 'pens'; hideScreen(); showHUD(false); $('#touch').style.display = isTouch ? 'block' : 'none';
-  $('#bA').textContent = 'CHUTAR'; $('#bB').textContent = '-';
+  G.mode = 'pens'; hideScreen(); showHUD(false); $('#touch').style.display = isTouch && !CONSOLE ? 'block' : 'none';
   const opp = TEAMS[res.opp];
   PEN = {res, ctx, opp, kicks: [[], []], turn: 0, phase: 'aim', t: 0, cursor: 0, gkZone: 0, ball: null, msg: '', msgT: 0,
     shooters: G.lineup.slice(1).concat(G.lineup.slice(1)).map(byNum), gk: byNum(G.lineup[0])};
@@ -1179,10 +1251,10 @@ function helpHTML(inMatch) {
   return `<div class="wrap">${inMatch ? '<div class="hdr"><h2>CONTROLES</h2><button class="btn sm back" data-a="back">Volver</button></div>' : header('CÓMO SE JUEGA')}
   <div class="panel"><h3>Teclado</h3><div class="keys">
     <b>←↑↓→</b> / <b>WASD</b> mover<br>
-    <b>Z</b> / <b>J</b> / <b>ESPACIO</b> con balón: CHUTAR (mantén para más potencia y apunta con ↑↓) · sin balón: ENTRADA<br>
-    <b>X</b> / <b>K</b> con balón: PASE (hacia donde apuntas) · sin balón: CAMBIAR JUGADOR<br>
+    <b>Z</b> / <b>J</b> / <b>ESPACIO</b> con balón: CHUTAR (mantén para más potencia y apunta con ↑↓) · sin balón: SEGADA<br>
+    <b>X</b> / <b>K</b> con balón: PASAR (hacia donde apuntas) · sin balón: DEFENDER (mantén: presiona y roba)<br>
     <b>SHIFT</b> sprint · <b>C</b> cambiar jugador · <b>ESC</b> / <b>P</b> pausa</div></div>
-  <div class="panel"><h3>Móvil</h3><div class="keys">Joystick: toca y arrastra en la mitad izquierda.<br>Botón rojo: CHUTAR / ENTRADA · Azul: PASE / CAMBIO · Amarillo: SPRINT.<br>Mejor en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio.</div></div>
+  <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Cruceta: mover (puedes deslizar el dedo para ir en diagonal).<br>Rojo: CHUTAR / SEGADA · Azul: PASAR / DEFENDER · Amarillo: SPRINT.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
   <div class="panel"><h3>Mando</h3><div class="keys">Stick / cruceta mover · A chutar/entrada · X o B pase/cambio · Y cambiar · RB/RT sprint · START pausa</div></div>
   <div class="panel"><h3>Reglas</h3><div class="muted">Fútbol 7: portero + 6. Dos partes de 25 minutos (el tiempo de juego real se cambia en Opciones). En la Copa, si hay empate se decide en una tanda de penaltis.</div></div></div>`;
 }
