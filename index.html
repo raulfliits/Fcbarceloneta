@@ -170,22 +170,23 @@ html.gb #touch{display:none!important}
  box-shadow:inset 0 0 0 2px #f6f2e8,inset -5px -7px 0 var(--edge),0 20px 60px rgba(0,0,0,.6);font-family:var(--f);color:#2b2f45}
 .c-top{flex:none;height:22px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--edge);margin:0 -4.5% 10px;padding:0 5%;font-size:7px;color:#8d8775}
 .c-top i{width:16%;height:6px;border-radius:3px;background:var(--body2);box-shadow:inset 0 1px 2px rgba(0,0,0,.25)}
-.c-bezel{flex:none;position:relative;background:var(--bezel);border-radius:8px 8px 34px 8px;padding:20px 6% 18px 8%}
+.c-bezel{flex:none;position:relative;background:var(--bezel);border-radius:8px 8px 40px 8px;padding:22px 5% 22px 9%;margin:0 -1.5%}
 .c-bezel:before{content:"";position:absolute;left:12px;right:12px;top:7px;height:6px;
  background:repeating-linear-gradient(90deg,#d8202f 0 10px,#f4f0e6 10px 20px);border-radius:2px;opacity:.9}
 .c-led{position:absolute;left:0;width:9%;top:42%;display:grid;justify-items:center;gap:4px;font-size:5px;color:#9a9db4}
 .c-led i{width:8px;height:8px;border-radius:50%;background:#ff3a4e;box-shadow:0 0 8px #ff3a4e}
-.c-screen{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#000;box-shadow:0 0 0 3px #15172a}
+.c-screen{position:relative;width:100%;aspect-ratio:10/9;max-height:56cqh;margin:0 auto;overflow:hidden;background:#000;box-shadow:0 0 0 3px #15172a}
 .c-brand{flex:none;margin:12px 0 0 2%;font-size:clamp(13px,5.2cqw,22px);color:#c92131;font-style:italic;letter-spacing:.02em;text-shadow:1px 1px 0 #fff8}
 .c-brand em{color:#1d3a8a}
 .c-brand small{display:block;font-size:.4em;color:#8d8775;margin-top:6px;font-style:normal;letter-spacing:.2em}
 .c-ctrl{flex:1 1 auto;min-height:150px;position:relative}
-.c-dpad{position:absolute;left:2%;top:50%;transform:translateY(-58%);width:clamp(110px,36cqw,170px);aspect-ratio:1;display:grid;grid-template:1fr 1fr 1fr/1fr 1fr 1fr;touch-action:none}
-.c-dpad b,.c-dpad i{background:#1b1b22;color:#5a5a68;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:normal;box-shadow:0 4px 0 #0a0a0d}
-.c-dpad i{grid-area:2/2;box-shadow:none}
-.c-dpad .u{grid-area:1/2;border-radius:6px 6px 0 0}.c-dpad .d{grid-area:3/2;border-radius:0 0 6px 6px}
-.c-dpad .l{grid-area:2/1;border-radius:6px 0 0 6px}.c-dpad .r{grid-area:2/3;border-radius:0 6px 6px 0}
-.c-dpad b.on{color:#f6d34a}
+.c-stick{position:absolute;left:1%;top:50%;transform:translateY(-55%);width:clamp(120px,40cqw,180px);aspect-ratio:1;border-radius:50%;touch-action:none;
+ background:radial-gradient(circle at 50% 50%,#2a2a33 0 46%,#17171d 47% 60%,#0c0c10 61% 64%,var(--body2) 65% 70%,transparent 71%);box-shadow:inset 0 -3px 0 rgba(255,255,255,.08)}
+.c-stick:before{content:"";position:absolute;inset:14%;border-radius:50%;background:repeating-conic-gradient(from 0deg,#3a3a46 0 2deg,transparent 2deg 45deg);opacity:.8}
+.c-knob{position:absolute;left:50%;top:50%;width:44%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);
+ background:radial-gradient(circle at 38% 32%,#4a4a58,#1b1b22 62%);box-shadow:0 6px 0 #08080b,0 0 0 3px #0c0c10,inset 0 0 0 6px #262630}
+.c-knob:after{content:"";position:absolute;inset:30%;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ff5a6c,#b80a26 70%)}
+.c-stick.on .c-knob{box-shadow:0 3px 0 #08080b,0 0 0 3px #0c0c10,inset 0 0 0 6px #262630}
 .c-btns{position:absolute;right:0;top:50%;transform:translateY(-55%);display:grid;grid-template:"b a" auto "s s" auto/1fr 1fr;gap:4px 10px;align-items:end;justify-items:center}
 .cb{display:grid;justify-items:center;gap:6px;font-size:clamp(6px,2.1cqw,8px);line-height:1.5;text-align:center;color:#1d3a8a}
 .cb button{border:0;border-radius:50%;padding:0;touch-action:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -201,10 +202,10 @@ html.gb #touch{display:none!important}
   display:grid;grid-template:"top top top" auto "pad bez btn" 1fr "pad brand btn" auto/minmax(130px,1fr) auto minmax(170px,1fr);padding:0 12px 6px;border-radius:26px}
  .c-top{grid-area:top;margin:0 -12px 4px;height:16px}
  .c-bezel{grid-area:bez;align-self:center;justify-self:center;padding:14px 22px 10px;height:min(calc(100cqh - 46px),calc((100cqw - 380px) * .5625 + 24px));aspect-ratio:auto;display:flex;align-items:center}
- .c-bezel .c-screen{height:100%;width:auto;aspect-ratio:16/9}
+ .c-bezel .c-screen{height:100%;width:auto;max-height:none;aspect-ratio:16/9}
  .c-brand{grid-area:brand;margin:4px 0 0;text-align:center;font-size:12px}.c-brand small{display:inline;margin-left:8px}
  .c-ctrl{display:contents}
- .c-dpad{grid-area:pad;position:relative;left:auto;top:auto;transform:none;align-self:center;justify-self:center;width:min(90%,140px)}
+ .c-stick{grid-area:pad;position:relative;left:auto;top:auto;transform:none;align-self:center;justify-self:center;width:min(95%,150px)}
  .c-btns{grid-area:btn;position:relative;right:auto;top:auto;transform:none;align-self:center;justify-self:center;gap:2px 8px}
  .cbA button{width:66px}.cbB button{width:58px}.cbS button{width:42px}.cb{font-size:6px;gap:4px}.cbA{transform:translateY(-28%)}
  .c-spk{display:none}

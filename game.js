@@ -264,7 +264,7 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
     <div class="c-bezel"><div class="c-led"><i></i><span>PILA</span></div><div class="c-screen" id="slot"></div></div>
     <div class="c-brand">MARINERS <em>Boy</em><small>C.F. BARCELONETA · SUB 12 A</small></div>
     <div class="c-ctrl">
-      <div class="c-dpad" id="cDpad" aria-label="Cruceta"><b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b><i></i></div>
+      <div class="c-stick" id="cStick" aria-label="Joystick"><div class="c-knob"></div></div>
       <div class="c-btns">
         <div class="cb cbA"><button id="cA" aria-label="Chutar o segada"></button><span>CHUTAR<br>SEGADA</span></div>
         <div class="cb cbB"><button id="cB" aria-label="Pasar o defender"></button><span>PASAR<br>DEFENDER</span></div>
@@ -274,22 +274,22 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
     </div>`;
   document.body.prepend(c); c.querySelector('#slot').appendChild($('#app'));
   document.documentElement.classList.add('gb');
-  // cruceta: 8 direcciones, se puede deslizar el dedo
-  const pad = c.querySelector('#cDpad'), arrows = {u: pad.querySelector('.u'), d: pad.querySelector('.d'), l: pad.querySelector('.l'), r: pad.querySelector('.r')};
-  let pid = null;
+  // joystick analógico: el pomo sigue al dedo (360 grados)
+  const stick = c.querySelector('#cStick'), knob = stick.querySelector('.c-knob');
+  let pid = null, menuY = 0;
   const setDir = e => {
-    const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    let x = 0, y = 0;
-    if (hyp(dx, dy) > r.width * 0.1) { const a = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI / 4; x = Math.round(Math.cos(a)); y = Math.round(Math.sin(a)); }
-    const m = hyp(x, y) || 1; const nx = x / m, ny = y / m;
-    if (G.mode === 'menu' && (x || y) && (x !== touch.x0 || y !== touch.y0)) menuKey({code: y > 0 || (!y && x > 0) ? 'ArrowDown' : 'ArrowUp', preventDefault() {}});
-    touch.x0 = x; touch.y0 = y; touch.x = nx; touch.y = ny;
-    arrows.u.classList.toggle('on', y < 0); arrows.d.classList.toggle('on', y > 0); arrows.l.classList.toggle('on', x < 0); arrows.r.classList.toggle('on', x > 0);
+    const r = stick.getBoundingClientRect(), R = r.width * 0.32;
+    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const m = hyp(dx, dy); if (m > R) { dx *= R / m; dy *= R / m; }
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    const mag = Math.min(1, m / R), dz = 0.18;
+    touch.x = mag < dz ? 0 : dx / R; touch.y = mag < dz ? 0 : dy / R;
+    if (G.mode === 'menu') { const my = touch.y > 0.6 ? 1 : touch.y < -0.6 ? -1 : 0; if (my && my !== menuY) menuKey({code: my > 0 ? 'ArrowDown' : 'ArrowUp', preventDefault() {}}); menuY = my; }
   };
-  pad.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; pad.setPointerCapture(pid); ac(); setDir(e); });
-  pad.addEventListener('pointermove', e => { if (e.pointerId === pid) setDir(e); });
-  const up = e => { if (e.pointerId !== pid) return; pid = null; touch.x = touch.y = touch.x0 = touch.y0 = 0; for (const k in arrows) arrows[k].classList.remove('on'); };
-  pad.addEventListener('pointerup', up); pad.addEventListener('pointercancel', up);
+  stick.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; stick.setPointerCapture(pid); stick.classList.add('on'); ac(); setDir(e); });
+  stick.addEventListener('pointermove', e => { if (e.pointerId === pid) setDir(e); });
+  const up = e => { if (e.pointerId !== pid) return; pid = null; menuY = 0; touch.x = touch.y = 0; knob.style.transform = 'translate(-50%,-50%)'; stick.classList.remove('on'); };
+  stick.addEventListener('pointerup', up); stick.addEventListener('pointercancel', up);
   for (const [id, key] of [['#cA', 'A'], ['#cB', 'B'], ['#cS', 'S']]) {
     const el = c.querySelector(id);
     el.addEventListener('pointerdown', e => {
@@ -311,7 +311,7 @@ function fitConsole() {
 }
 
 // ---------- CAMPO Y ESTADIO ----------
-const VW = 320, VH = 180, SC = 2; // vista en unidades de mundo; el lienzo dibuja a x2 (640x360)
+let VW = 320, VH = 180; const SC = 2; // vista en unidades de mundo (se adapta a la forma de la pantalla); el lienzo dibuja a x2
 const F = {x0: 44, y0: 74, x1: 444, y1: 324}; // fútbol 7: 400 x 250
 const FW = F.x1 + 44, FH = F.y1 + 50;
 const FL = F.x1 - F.x0, FHt = F.y1 - F.y0, CX = (F.x0 + F.x1) / 2, CY = (F.y0 + F.y1) / 2;
@@ -817,13 +817,17 @@ function stepMatch(dt) {
 // ---------- RENDER ----------
 const cv = $('#cv'), g = cv.getContext('2d');
 g.imageSmoothingEnabled = false;
-const PW = VW * SC, PH = VH * SC; // 640 x 360
+let PW = VW * SC, PH = VH * SC; // 640 x 360 en pantalla ancha
 function fit() {
   fitConsole();
   const el = $('#app'), app = {width: el.clientWidth, height: el.clientHeight};
+  // forma de la vista: ancha (16:9) en el ordenador, casi cuadrada (como una Game Boy) en la consola en vertical
+  const asp = app.width / Math.max(1, app.height);
+  const nh = asp < 1.45 ? 216 : 180, nw = clamp(Math.round(nh * asp / 2) * 2, 200, 320);
+  if (nw !== VW || nh !== VH) { VW = nw; VH = nh; PW = VW * SC; PH = VH * SC; cv.width = PW; cv.height = PH; g.imageSmoothingEnabled = false; }
   const s = Math.min(app.width / PW, app.height / PH);
   cv.style.width = Math.floor(PW * s) + 'px'; cv.style.height = Math.floor(PH * s) + 'px';
-  const portrait = app.height > app.width * 0.9;
+  const portrait = !CONSOLE && app.height > app.width * 0.9;
   $('#stage').style.alignItems = portrait && G.mode !== 'menu' ? 'flex-start' : 'center';
   $('#stage').style.paddingTop = portrait && G.mode !== 'menu' ? '70px' : '0';
 }
@@ -1091,20 +1095,22 @@ function penStep(dt) {
 function penRender() {
   const P = PEN; if (!P) return;
   g.setTransform(1, 0, 0, 1, 0, 0);
-  g.fillStyle = '#2a6332'; g.fillRect(0, 0, PW, PH);
+  const pox = (VW - 320) / 2, poy = (VH - 180) / 2;
+  g.fillStyle = '#2a6332'; g.fillRect(0, 0, PW, PH); g.fillStyle = '#14182a'; g.fillRect(0, 0, PW, (poy + 30) * SC);
+  g.translate(0, poy * SC);
   drawCrowd(g, 0, 60, PW, 22, Math.floor(performance.now() / (P.msgT > 0 && P.msg === '¡GOL!' ? 140 : 420)) % 2 + (P.msgT > 0 && P.msg === '¡GOL!' ? 1 : 0), 9, P.msgT > 0 && P.msg === '¡GOL!');
-  g.setTransform(SC, 0, 0, SC, 0, 0);
-  g.fillStyle = '#c92131'; g.fillRect(0, 40, VW, 7); txt(g, 'SOM MARINERS   BRUNO TV KIDS FOOTBALL   C.F. BARCELONETA   SOM MARINERS', 4, 41, '#fff');
-  for (let x = 0, i = 0; x < VW; x += 40, i++) { g.fillStyle = i % 2 ? '#3e9a45' : '#48a94f'; g.fillRect(x, 47, 40, 133); }
-  g.fillStyle = '#14182a'; g.fillRect(0, 0, VW, 30);
+  g.setTransform(SC, 0, 0, SC, pox * SC, poy * SC);
+  g.fillStyle = '#c92131'; g.fillRect(-pox, 40, VW, 7); txt(g, 'SOM MARINERS   BRUNO TV KIDS FOOTBALL   C.F. BARCELONETA   SOM MARINERS', 4, 41, '#fff');
+  for (let x = -40, i = 0; x < 360; x += 40, i++) { g.fillStyle = i % 2 ? '#3e9a45' : '#48a94f'; g.fillRect(x, 47, 40, 133 + poy * 2); }
+  g.fillStyle = '#14182a'; g.fillRect(-pox, 0, VW, 30);
   txt(g, 'TANDA DE PENALTIS', 160 - txtW('TANDA DE PENALTIS', 2) / 2, 4, '#f2c14e', 2);
   // marcador de tandas
-  const row = (y, arr, label) => { txt(g, label, 8, y, '#fff'); for (let i = 0; i < Math.max(5, arr.length); i++) { const v = arr[i]; g.fillStyle = v === undefined ? '#555' : v ? '#3ddc5a' : '#e33'; g.fillRect(40 + i * 7, y, 5, 5); } };
-  row(17, P.kicks[0], 'BAR'); txt(g, P.opp.short, 200, 17, '#fff'); for (let i = 0; i < Math.max(5, P.kicks[1].length); i++) { const v = P.kicks[1][i]; g.fillStyle = v === undefined ? '#555' : v ? '#3ddc5a' : '#e33'; g.fillRect(220 + i * 7, 17, 5, 5); }
+  const row = (x, y, arr, label) => { txt(g, label, x, y, '#fff'); for (let i = 0; i < Math.min(7, Math.max(5, arr.length)); i++) { const v = arr[arr.length > 7 ? arr.length - 7 + i : i]; g.fillStyle = v === undefined ? '#555' : v ? '#3ddc5a' : '#e33'; g.fillRect(x + 16 + i * 6, y, 4, 5); } };
+  row(46, 17, P.kicks[0], 'BAR'); row(196, 17, P.kicks[1], P.opp.short);
   // portería
   g.fillStyle = 'rgba(240,240,240,.35)'; for (let x = 72; x <= 248; x += 6) g.fillRect(x, 50, 1, 56); for (let y = 50; y < 106; y += 6) g.fillRect(72, y, 176, 1);
   g.fillStyle = '#fff'; g.fillRect(70, 48, 180, 3); g.fillRect(70, 48, 3, 60); g.fillRect(247, 48, 3, 60);
-  g.fillStyle = '#f4f4ee'; g.fillRect(0, 107, VW, 1);
+  g.fillStyle = '#f4f4ee'; g.fillRect(-pox, 107, VW, 1);
   // portero
   const gkTeam = P.turn === 0 ? 1 : 0;
   const kit = gkTeam === 0 ? TEAMS.BAR.kit : P.opp.kit;
@@ -1134,7 +1140,7 @@ function penRender() {
   // tirador
   const sh = P.turn === 0 ? P.shooters[P.kicks[0].length % P.shooters.length] : null;
   if (P.phase === 'aim') {
-    g.fillStyle = 'rgba(20,24,42,.8)'; g.fillRect(0, 169, VW, 11);
+    g.fillStyle = 'rgba(20,24,42,.8)'; g.fillRect(-pox, 169, VW, 11);
     if (P.turn === 0) {
       g.fillStyle = '#f2c14e'; const x = Math.round(P.cursor); g.fillRect(x - 5, 76, 11, 1); g.fillRect(x, 71, 1, 11);
       const t = `LANZA ${sh.name} - PULSA CHUTAR`; txt(g, t, 160 - txtW(t) / 2, 172, '#fff');
