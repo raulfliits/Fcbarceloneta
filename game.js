@@ -14,7 +14,7 @@ const PLAYERS = [
   {n:4,  name:'ABDUL',   pos:'DEF', pac:6, sho:5, pas:6, def:8, cara:16, fija:true}, // foto oficial
   {n:6,  name:'OLIVER',  pos:'MED', pac:7, sho:6, pas:7, def:6, cara:27, fija:true}, // foto oficial
   {n:7,  name:'DAVID',   pos:'DEL', pac:8, sho:9, pas:7, def:4, cara:19, fija:true}, // foto oficial
-  {n:8,  name:'DÍDAC',   pos:'MED', pac:6, sho:5, pas:7, def:6, cara:5},
+  {n:8,  name:'DÍDAC',   pos:'MED', pac:6, sho:5, pas:7, def:6, cara:29, fija:true}, // foto oficial (de la foto del equipo)
   {n:9,  name:'ORIOL',   pos:'DEL', pac:8, sho:9, pas:6, def:4, cara:24, fija:true}, // foto oficial (Uri)
   {n:10, name:'ALFONS',  pos:'MED', pac:7, sho:6, pas:7, def:5, cara:28, fija:true}, // foto oficial
   {n:11, name:'KENAN',   pos:'MED', pac:7, sho:7, pas:6, def:5, cara:22, fija:true}, // foto oficial
@@ -26,7 +26,7 @@ const PLAYERS = [
   {n:22, name:'BRUNO',   pos:'MED', pac:6, sho:6, pas:6, def:5, cara:20, fija:true, inj:true}, // foto oficial
 ];
 const DEFAULT_LINEUP = [1, 4, 3, 6, 11, 7, 9]; // dorsales: POR, DEF, DEF, MED, MED, DEL, DEL
-const NUM_CARAS = 28;
+const NUM_CARAS = 29;
 // Tono de piel y pelo de cada foto (para el sprite en el campo)
 const CARA_LOOK = [
   {skin:'#e8b98e', hair:'#5a3a22'},
@@ -49,6 +49,7 @@ const CARA_LOOK = [
   {skin:'#e8b892', hair:'#6b4a2c'}, // 26: Pau (foto oficial)
   {skin:'#f0c4a0', hair:'#a87c4c'}, // 27: Oliver (foto oficial)
   {skin:'#efc6a6', hair:'#4a3a30'}, // 28: Alfons (foto oficial)
+  {skin:'#ebc29a', hair:'#2a211c'}, // 29: Dídac (foto oficial)
 ];
 
 // Rivales de la temporada 26/27 (Liga ACDEA + amistosos de pretemporada).
@@ -1331,7 +1332,7 @@ const POSN = {POR: 'Portero', DEF: 'Defensa', MED: 'Centrocampista', DEL: 'Delan
 function plantillaScreen() {
   const pl = PLAYERS.slice().sort((a, b) => a.n - b.n);
   screen(`<div class="wrap">${header('PLANTILLA · CONVOCADOS')}
-    <p class="muted">Toca un jugador para elegir su foto. Las fotos salen de la foto del equipo de la web.</p>
+    <p class="muted">Todos los jugadores tienen su foto oficial en pixel art.</p>
     <div class="cards">${pl.map(p => `<button class="card ${p.inj ? 'out' : ''}" data-a="face" data-v="${p.n}">
       ${p.inj ? '<span class="inj">LESIÓN</span>' : ''}<img class="px" src="${faceURL(p)}" alt="">
       <div><div class="num">${p.n}</div><div class="nm">${esc(p.name)}</div><div class="pos">${POSN[p.pos]}</div>${statBars(p)}</div></button>`).join('')}</div></div>`,
