@@ -18,12 +18,12 @@ const PLAYERS = [
   {n:9,  name:'ORIOL',   pos:'DEL', pac:8, sho:9, pas:6, def:4, cara:24, fija:true}, // foto oficial (Uri)
   {n:10, name:'ALFONS',  pos:'MED', pac:7, sho:6, pas:7, def:5, cara:28, fija:true}, // foto oficial
   {n:11, name:'KENAN',   pos:'MED', pac:7, sho:7, pas:6, def:5, cara:22, fija:true}, // foto oficial
-  {n:12, name:'JUAN',    pos:'MED', pac:6, sho:5, pas:6, def:6, cara:23, fija:true, inj:true}, // foto oficial
+  {n:12, name:'JUAN',    pos:'MED', pac:6, sho:5, pas:6, def:6, cara:23, fija:true}, // foto oficial
   {n:14, name:'PAU',     pos:'DEF', pac:6, sho:5, pas:6, def:7, cara:26, fija:true}, // foto oficial
   {n:15, name:'CIRO',    pos:'DEF', pac:6, sho:4, pas:6, def:7, cara:17, fija:true}, // foto oficial
   {n:17, name:'VICENTE', pos:'DEF', pac:6, sho:4, pas:5, def:7, cara:21, fija:true}, // foto oficial
   {n:19, name:'MATHIAS', pos:'DEL', pac:7, sho:7, pas:6, def:5, cara:18, fija:true}, // foto oficial
-  {n:22, name:'BRUNO',   pos:'MED', pac:6, sho:6, pas:6, def:5, cara:20, fija:true, inj:true}, // foto oficial
+  {n:22, name:'BRUNO',   pos:'MED', pac:6, sho:6, pas:6, def:5, cara:20, fija:true}, // foto oficial
 ];
 const DEFAULT_LINEUP = [1, 4, 3, 6, 11, 7, 9]; // dorsales: POR, DEF, DEF, MED, MED, DEL, DEL
 const NUM_CARAS = 29;

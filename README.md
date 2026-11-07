@@ -11,7 +11,7 @@ Siempre juegas con el Barceloneta. Funciona en el navegador (ordenador y móvil)
 Rivales: Ona Sant Adrià A y B, CD Monopol, PB Trinitat Vella, PB Barcino A, B y C, F.B. Montcada, CD Trinidad, y los de pretemporada U.E. Sants y Bon Pastor.
 
 ## Plantilla (convocados)
-1 Marc · 3 Youssef · 4 Abdul · 6 Oliver · 7 David · 8 Dídac · 9 Oriol · 10 Alfons · 11 Kenan · 12 Juan (lesión) · 14 Pau · 15 Ciro · 17 Vicente · 19 Mathias · 22 Bruno (lesión)
+1 Marc · 3 Youssef · 4 Abdul · 6 Oliver · 7 David · 8 Dídac · 9 Oriol · 10 Alfons · 11 Kenan · 12 Juan · 14 Pau · 15 Ciro · 17 Vicente · 19 Mathias · 22 Bruno
 
 Cada jugador tiene su foto oficial en pixel art (`caras/cara-15.png` a `cara-29.png`), hecha a partir de su foto con `tools/cara.py`. En `PLAYERS`, al principio de `game.js`, el campo `cara` indica el archivo y `fija:true` la marca como oficial.
 
