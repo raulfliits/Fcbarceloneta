@@ -192,7 +192,7 @@ function stopMusic() { if (musicTimer) clearInterval(musicTimer); musicTimer = n
 
 // ---------- ENTRADA ----------
 const K = {};
-const touch = {x: 0, y: 0, A: false, B: false, S: false};
+const touch = {x: 0, y: 0, ax: 0, ay: 0, A: false, B: false, S: false};
 const inp = {x: 0, y: 0, shoot: false, pass: false, sprint: false, sw: false, shootP: false, shootR: false, passP: false, swP: false};
 let prevIn = {};
 addEventListener('keydown', e => {
@@ -226,7 +226,7 @@ function pollInput() {
     gpPrev.start = b(9);
   }
   const m = hyp(x, y); if (m > 1) { x /= m; y /= m; }
-  inp.x = x; inp.y = y;
+  inp.x = x; inp.y = y; inp.ax = touch.ax || 0; inp.ay = touch.ay || 0; inp.aim = hyp(inp.ax, inp.ay) > 0.3;
   inp.shoot = !!(K.KeyZ || K.KeyJ || K.Space || touch.A || gS);
   inp.pass = !!(K.KeyX || K.KeyK || touch.B || gP);
   inp.sprint = !!(K.ShiftLeft || K.ShiftRight || touch.S || gR);
@@ -260,37 +260,64 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
 (function buildConsole() {
   if (!CONSOLE) return;
   const c = document.createElement('div'); c.id = 'console';
-  c.innerHTML = `<div class="c-top"><span>◂ OFF · ON ▸</span><i></i></div>
-    <div class="c-bezel"><div class="c-led"><i></i><span>PILA</span></div><div class="c-screen" id="slot"></div></div>
-    <div class="c-brand">MARINERS <em>Boy</em><small>C.F. BARCELONETA · SUB 12 A</small></div>
+  c.innerHTML = `<div class="c-glass"><div class="c-screen" id="slot"></div></div><i class="c-led"></i>
+    <div class="c-brand"><b>MARINERS</b> BRICK <small>SUB 12 A</small></div>
     <div class="c-ctrl">
-      <div class="c-stick" id="cStick" aria-label="Joystick"><div class="c-knob"></div></div>
-      <div class="c-btns">
-        <div class="cb cbA"><button id="cA" aria-label="Chutar o segada"></button><span>CHUTAR<br>SEGADA</span></div>
-        <div class="cb cbB"><button id="cB" aria-label="Pasar o defender"></button><span>PASAR<br>DEFENDER</span></div>
-        <div class="cb cbS"><button id="cS" aria-label="Sprint"></button><span>SPRINT</span></div>
+      <div class="c-dpad" id="cDpad" aria-label="Cruceta"><b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b><i></i></div>
+      <div class="c-mid"><div><button id="cSel" aria-label="Sonido"></button>SELECT</div><div><button id="cStart" aria-label="Pausa"></button>START</div></div>
+      <div class="c-abxy">
+        <div class="k x"><button id="cX" aria-label="Pausa">X</button><span>PAUSA</span></div>
+        <div class="k y"><button id="cY" aria-label="Sprint">Y</button><span>SPRINT</span></div>
+        <div class="k a"><button id="cA" aria-label="Chutar o segada">A</button><span>CHUTAR<br>SEGADA</span></div>
+        <div class="k b"><button id="cB" aria-label="Pasar o defender">B</button><span>PASAR<br>DEFENDER</span></div>
       </div>
-      <div class="c-spk"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="c-stick l" id="cStickL" aria-label="Joystick: mover"><div class="c-knob"></div><em>MOVER</em></div>
+      <div class="c-stick r" id="cStickR" aria-label="Joystick: apuntar"><div class="c-knob"></div><em>APUNTAR</em></div>
+      <div class="c-foot"><div class="spk">${'<i></i>'.repeat(14)}</div>
+        <div class="sys"><button id="cHome" aria-label="Sonido">♪</button><button id="cPause" aria-label="Pausa">■</button><button id="cPlay" aria-label="Seguir">▶</button></div>
+        <div class="spk">${'<i></i>'.repeat(14)}</div></div>
     </div>`;
   document.body.prepend(c); c.querySelector('#slot').appendChild($('#app'));
   document.documentElement.classList.add('gb');
-  // joystick analógico: el pomo sigue al dedo (360 grados)
-  const stick = c.querySelector('#cStick'), knob = stick.querySelector('.c-knob');
-  let pid = null, menuY = 0;
-  const setDir = e => {
-    const r = stick.getBoundingClientRect(), R = r.width * 0.32;
-    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    const m = hyp(dx, dy); if (m > R) { dx *= R / m; dy *= R / m; }
-    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    const mag = Math.min(1, m / R), dz = 0.18;
-    touch.x = mag < dz ? 0 : dx / R; touch.y = mag < dz ? 0 : dy / R;
-    if (G.mode === 'menu') { const my = touch.y > 0.6 ? 1 : touch.y < -0.6 ? -1 : 0; if (my && my !== menuY) menuKey({code: my > 0 ? 'ArrowDown' : 'ArrowUp', preventDefault() {}}); menuY = my; }
+  // movimiento = cruceta o joystick izquierdo (el que se esté usando)
+  const mv = {dx: 0, dy: 0, sx: 0, sy: 0};
+  let menuY = 0;
+  const applyMove = () => {
+    const useStick = mv.sx || mv.sy; touch.x = useStick ? mv.sx : mv.dx; touch.y = useStick ? mv.sy : mv.dy;
+    if (G.mode === 'menu') { const my = touch.y > 0.6 ? 1 : touch.y < -0.6 ? -1 : (!touch.y && touch.x > 0.6) ? 1 : (!touch.y && touch.x < -0.6) ? -1 : 0;
+      if (my && my !== menuY) menuKey({code: my > 0 ? 'ArrowDown' : 'ArrowUp', preventDefault() {}}); menuY = my; }
   };
-  stick.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; stick.setPointerCapture(pid); stick.classList.add('on'); ac(); setDir(e); });
-  stick.addEventListener('pointermove', e => { if (e.pointerId === pid) setDir(e); });
-  const up = e => { if (e.pointerId !== pid) return; pid = null; menuY = 0; touch.x = touch.y = 0; knob.style.transform = 'translate(-50%,-50%)'; stick.classList.remove('on'); };
-  stick.addEventListener('pointerup', up); stick.addEventListener('pointercancel', up);
-  for (const [id, key] of [['#cA', 'A'], ['#cB', 'B'], ['#cS', 'S']]) {
+  const drag = (el, onMove, onEnd) => {
+    let pid = null;
+    el.addEventListener('pointerdown', e => { e.preventDefault(); pid = e.pointerId; el.setPointerCapture(pid); el.classList.add('on'); ac(); onMove(e); });
+    el.addEventListener('pointermove', e => { if (e.pointerId === pid) onMove(e); });
+    const end = e => { if (e.pointerId !== pid) return; pid = null; el.classList.remove('on'); onEnd(); };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  };
+  // cruceta (8 direcciones)
+  const pad = c.querySelector('#cDpad'), ar = {u: pad.querySelector('.u'), d: pad.querySelector('.d'), l: pad.querySelector('.l'), r: pad.querySelector('.r')};
+  drag(pad, e => {
+    const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    let x = 0, y = 0;
+    if (hyp(dx, dy) > r.width * 0.1) { const a = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI / 4; x = Math.round(Math.cos(a)); y = Math.round(Math.sin(a)); }
+    const m = hyp(x, y) || 1; mv.dx = x / m; mv.dy = y / m; applyMove();
+    ar.u.classList.toggle('on', y < 0); ar.d.classList.toggle('on', y > 0); ar.l.classList.toggle('on', x < 0); ar.r.classList.toggle('on', x > 0);
+  }, () => { mv.dx = mv.dy = 0; applyMove(); for (const k in ar) ar[k].classList.remove('on'); });
+  // joysticks analógicos
+  const stick = (el, set) => {
+    const knob = el.querySelector('.c-knob');
+    drag(el, e => {
+      const r = el.getBoundingClientRect(), R = r.width * 0.38;
+      let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      const m = hyp(dx, dy); if (m > R) { dx *= R / m; dy *= R / m; }
+      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      const dead = Math.min(1, m / R) < 0.18; set(dead ? 0 : dx / R, dead ? 0 : dy / R);
+    }, () => { knob.style.transform = 'translate(-50%,-50%)'; set(0, 0); });
+  };
+  stick(c.querySelector('#cStickL'), (x, y) => { mv.sx = x; mv.sy = y; applyMove(); });
+  stick(c.querySelector('#cStickR'), (x, y) => { touch.ax = x; touch.ay = y; });
+  // botones de juego
+  for (const [id, key] of [['#cA', 'A'], ['#cB', 'B'], ['#cY', 'S']]) {
     const el = c.querySelector(id);
     el.addEventListener('pointerdown', e => {
       e.preventDefault(); touch[key] = true; el.classList.add('on'); el.setPointerCapture(e.pointerId); ac();
@@ -302,6 +329,13 @@ const CONSOLE = /gameboy|consola/i.test(location.hash) || (isTouch && !/sinconso
     const off = () => { touch[key] = false; el.classList.remove('on'); };
     el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
   }
+  // pausa / sonido
+  const tap = (id, fn) => c.querySelector(id).addEventListener('pointerdown', e => { e.preventDefault(); ac(); fn(); });
+  const pause = () => { if (G.mode === 'match') togglePause(); };
+  tap('#cX', pause); tap('#cStart', pause); tap('#cPause', pause);
+  tap('#cPlay', () => { if (G.mode === 'match' && G.paused) togglePause(); });
+  const snd = () => { settings.sound = !settings.sound; store.set('settings', settings); if (settings.sound) { if (G.mode === 'menu') startMusic(); SFX.ok(); } else stopMusic(); };
+  tap('#cSel', snd); tap('#cHome', snd);
   new ResizeObserver(() => fit()).observe(c.querySelector('#slot'));
 })();
 function fitConsole() {
@@ -623,11 +657,11 @@ function humanCtrl(p, dt) {
     if (inp.shoot) p.charge = Math.min(1, p.charge + dt / 0.65);
     if (inp.shootR && (p.charge > 0 || inp.shootP)) {
       const dG = Math.abs(oppGoalX(0) - p.x);
-      if (dG < 230) shoot(p, Math.max(0.25, p.charge), clamp(inp.y, -1, 1) || (p.y < CY ? -0.3 : 0.3));
+      if (dG < 230) shoot(p, Math.max(0.25, p.charge), inp.aim ? clamp(inp.ay * 1.3, -1, 1) : (clamp(inp.y, -1, 1) || (p.y < CY ? -0.3 : 0.3)));
       else { kick(p, p.fx * 230, p.fy * 230 + inp.y * 60, 90); SFX.shot(); }
       p.charge = 0;
     }
-    if (inp.passP) { const dx = inp.x || inp.y ? inp.x : p.fx, dy = inp.x || inp.y ? inp.y : p.fy; const t = humanPassTarget(p, dx, dy); if (t) passTo(p, t); }
+    if (inp.passP) { const dx = inp.aim ? inp.ax : inp.x || inp.y ? inp.x : p.fx, dy = inp.aim ? inp.ay : inp.x || inp.y ? inp.y : p.fy; const t = humanPassTarget(p, dx, dy); if (t) passTo(p, t); }
   } else {
     p.charge = 0;
     if (inp.shootP) tackle(p);             // SEGADA
@@ -1260,7 +1294,7 @@ function helpHTML(inMatch) {
     <b>Z</b> / <b>J</b> / <b>ESPACIO</b> con balón: CHUTAR (mantén para más potencia y apunta con ↑↓) · sin balón: SEGADA<br>
     <b>X</b> / <b>K</b> con balón: PASAR (hacia donde apuntas) · sin balón: DEFENDER (mantén: presiona y roba)<br>
     <b>SHIFT</b> sprint · <b>C</b> cambiar jugador · <b>ESC</b> / <b>P</b> pausa</div></div>
-  <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Cruceta: mover (puedes deslizar el dedo para ir en diagonal).<br>Rojo: CHUTAR / SEGADA · Azul: PASAR / DEFENDER · Amarillo: SPRINT.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
+  <div class="panel"><h3>Móvil (consola)</h3><div class="keys">Joystick izquierdo o cruceta: mover · Joystick derecho: apuntar el pase o el chut.<br>A: CHUTAR / SEGADA · B: PASAR / DEFENDER · Y: SPRINT · X o START: PAUSA · SELECT: sonido.<br>Funciona en vertical y en horizontal. En iPhone: Compartir → Añadir a pantalla de inicio. Sin consola: añade #sinconsola a la dirección.</div></div>
   <div class="panel"><h3>Mando</h3><div class="keys">Stick / cruceta mover · A chutar/entrada · X o B pase/cambio · Y cambiar · RB/RT sprint · START pausa</div></div>
   <div class="panel"><h3>Reglas</h3><div class="muted">Fútbol 7: portero + 6. Dos partes de 25 minutos (el tiempo de juego real se cambia en Opciones). En la Copa, si hay empate se decide en una tanda de penaltis.</div></div></div>`;
 }
