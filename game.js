@@ -1255,13 +1255,13 @@ function header(t, back = true) { return `<div class="hdr"><img class="px" src="
 
 function titleScreen() {
   G.mode = 'menu'; showHUD(false);
-  const xi = G.lineup.map(byNum);
+  const xi = PLAYERS.slice().sort((a, b) => a.n - b.n);
   screen(`<div class="wrap attract">
     <div class="p1"><span>1 PLAYER</span><span>SUB 12 A · 26/27</span></div>
-    <div class="faceRow">${xi.map(p => `<figure><img class="px" src="${faceURL(p)}" alt=""><b>${p.n}</b>${esc(p.name)}</figure>`).join('')}</div>
     <div class="logoArc">MARINERS<br>SOCCER 16<small>C.F. BARCELONETA</small></div>
+    <div class="faceRow all">${xi.map(p => `<figure><img class="px" src="${faceURL(p)}" alt=""><b>${p.n}</b>${esc(p.name)}</figure>`).join('')}</div>
     <img class="px photo" src="img-equipo.png" alt="El equipo Sub 12 A en pixel art" style="width:min(300px,80%)">
-    <button class="btn red" data-a="start" style="font-size:14px;padding:16px 26px">Pulsa start</button>
+    <button class="btn red" data-a="start" style="font-size:14px;padding:16px 26px;margin-top:8px">Pulsa start</button>
     <div class="blink">INSERT COIN · SOM MARINERS</div>
     <p class="muted" style="margin-top:18px">Bruno TV Kids Football · Temporada 2026-27</p></div>`,
     {start: () => { ac(); startMusic(); mainMenu(); }});

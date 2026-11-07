@@ -1,5 +1,5 @@
 // Red primero, caché como respaldo (para jugar sin conexión)
-const CACHE = 'mariners16-v23';
+const CACHE = 'mariners16-v24';
 const FILES = ['./', 'index.html', 'game.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png',
   'img-equipo.png', 'escudos/barceloneta.png', 'escudos/montcada.png',
   ...Array.from({length: 29}, (_, i) => `caras/cara-${String(i + 1).padStart(2, '0')}.png`)];
