@@ -16,7 +16,7 @@ const PLAYERS = [
   {n:7,  name:'DAVID',   pos:'DEL', pac:8, sho:9, pas:7, def:4, cara:19, fija:true}, // foto oficial
   {n:8,  name:'DÍDAC',   pos:'MED', pac:6, sho:5, pas:7, def:6, cara:5},
   {n:9,  name:'ORIOL',   pos:'DEL', pac:8, sho:9, pas:6, def:4, cara:24, fija:true}, // foto oficial (Uri)
-  {n:10, name:'ALFON',   pos:'MED', pac:7, sho:6, pas:7, def:5, cara:7},
+  {n:10, name:'ALFONS',  pos:'MED', pac:7, sho:6, pas:7, def:5, cara:28, fija:true}, // foto oficial
   {n:11, name:'KENAN',   pos:'MED', pac:7, sho:7, pas:6, def:5, cara:22, fija:true}, // foto oficial
   {n:12, name:'JUAN',    pos:'MED', pac:6, sho:5, pas:6, def:6, cara:23, fija:true, inj:true}, // foto oficial
   {n:14, name:'PAU',     pos:'DEF', pac:6, sho:5, pas:6, def:7, cara:26, fija:true}, // foto oficial
@@ -26,7 +26,7 @@ const PLAYERS = [
   {n:22, name:'BRUNO',   pos:'MED', pac:6, sho:6, pas:6, def:5, cara:20, fija:true, inj:true}, // foto oficial
 ];
 const DEFAULT_LINEUP = [1, 4, 3, 6, 11, 7, 9]; // dorsales: POR, DEF, DEF, MED, MED, DEL, DEL
-const NUM_CARAS = 27;
+const NUM_CARAS = 28;
 // Tono de piel y pelo de cada foto (para el sprite en el campo)
 const CARA_LOOK = [
   {skin:'#e8b98e', hair:'#5a3a22'},
@@ -48,6 +48,7 @@ const CARA_LOOK = [
   {skin:'#c98e66', hair:'#1f1a1a'}, // 25: Youssef (foto oficial)
   {skin:'#e8b892', hair:'#6b4a2c'}, // 26: Pau (foto oficial)
   {skin:'#f0c4a0', hair:'#a87c4c'}, // 27: Oliver (foto oficial)
+  {skin:'#efc6a6', hair:'#4a3a30'}, // 28: Alfons (foto oficial)
 ];
 
 // Rivales de la temporada 26/27 (Liga ACDEA + amistosos de pretemporada).
@@ -86,7 +87,7 @@ const REAL_TABLE = [
   ['PB TRINITAT VELLA',3,2,0,1,17,12,6],['PB BARCINO B',3,2,0,1,15,17,6],['FB MONTCADA',3,1,1,1,16,14,4],
   ['PB BARCINO A',3,1,1,1,15,13,4],['CD TRINIDAD',3,0,0,3,6,21,0],['ONA SANT ADRIA A',3,0,0,3,6,23,0],['PB BARCINO C',3,0,0,3,1,23,0],
 ];
-const REAL_SCORERS = [['DAVID',11],['ORIOL',11],['KENAN',3],['MATHIAS',2],['OLIVER',2],['ABDUL',1],['ALFON',1],['BRUNO',1],['DÍDAC',1],['PAU',1],['YOUSSEF',1]];
+const REAL_SCORERS = [['DAVID',11],['ORIOL',11],['KENAN',3],['MATHIAS',2],['OLIVER',2],['ABDUL',1],['ALFONS',1],['BRUNO',1],['DÍDAC',1],['PAU',1],['YOUSSEF',1]];
 
 // ---------- UTILIDADES ----------
 const $ = s => document.querySelector(s);
@@ -1410,6 +1411,7 @@ function tableHTML(tab) {
 }
 function ligaScreen() {
   let L = store.get('liga', null) || newLeague();
+  if (L.goleadores && L.goleadores.ALFON) { L.goleadores.ALFONS = (L.goleadores.ALFONS || 0) + L.goleadores.ALFON; delete L.goleadores.ALFON; store.set('liga', L); }
   const done = L.j >= L.rounds.length;
   let next = '', ourM = null;
   if (!done) {
